@@ -16,6 +16,19 @@ Install Dependencies
 - ```./bin/pip3 install crccheck```
 - ```./bin/pip3 install telemetrix```
 
+## Learning Python
+
+- https://www.freecodecamp.org/news/python-code-examples-simple-python-program-example/
+- https://www.freecodecamp.org/news/python-code-examples-simple-python-program-example/
+
+## PCB
+
+- https://www.circuito.io/app?components=9442,11021,417986,442979,942700,942700,2345678,2345678,2345678,2345678
+
+## Decoding the Protocol
+
+The messages are defined as Kaitai Struct (https://kaitai.io/) in the protocol_fes.ksy file. Most of the messages are text. The LCD1 messages is binary.
+
 ## Start the SW without HW
 - ```socat -d -d pty,raw,echo=0 tcp-listen:8083```
 - ```./bin/python3 ./dummybattery.py -p 8083 -lo=25```
