@@ -19,7 +19,7 @@ Install Dependencies
 ## Learning Python
 
 - https://www.freecodecamp.org/news/python-code-examples-simple-python-program-example/
-- https://www.freecodecamp.org/news/python-code-examples-simple-python-program-example/
+- https://realpython.com/python3-object-oriented-programming/
 
 ## PCB
 
