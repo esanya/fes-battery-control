@@ -179,5 +179,6 @@ class BatteryManager(object):
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
         logging.info('on_message: %s, %s', msg.topic, str(msg.payload))
-        self.mngrInnerLoop(msg.payload)
+        pl=json.loads(msg.payload)
+        self.mngrInnerLoop(pl.command)
     
