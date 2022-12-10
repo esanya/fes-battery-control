@@ -9,6 +9,8 @@ import threading
 import re
 import paho.mqtt.client as mqtt
 import json
+import os
+import os.path
 
 report_log='/bttrymngr_report.log'
 
@@ -73,6 +75,9 @@ class BatteryManager(object):
         return state
 
     def initCtrlFifo(self):
+        if (os.path.exists(self.control_fifo)):
+            os.remove(self.control_fifo)
+        os.mkfifo(self.control_fifo)
         self.ctrlFifo=open(self.control_fifo, 'r')
 
     def __repr__(self):
