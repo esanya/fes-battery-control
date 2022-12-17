@@ -15,6 +15,7 @@ Setup Python VEenv
 Install Dependencies
 - ```./bin/pip3 install crccheck```
 - ```./bin/pip3 install telemetrix```
+- ```./bin/pip3 install paho-mqtt```
 
 ## Start the SW without HW
 - ```socat -d -d pty,raw,echo=0 tcp-listen:8083```

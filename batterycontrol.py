@@ -38,6 +38,10 @@ class BatteryControl(object):
     def __repr__(self):
         return f"BatteryControl: name: {self.name}, ctrlstate: {self.ctrlstate}, btrystate: {self.btrystate}, targetSOC: {self.targetSOC}, currentSOC: {self.currentSOC}"
 
+    def getState(self):
+        state={'ctrlstate': str(self.ctrlstate), 'btrystate': str(self.btrystate), 'targetSOC': self.targetSOC, 'currentSOC': self.currentSOC, 'socFailCount': self.socFailCount}
+        return state
+
     def shortInfo(self):
         return f"{self.name} "+("off" if (self.btrystate==BtryMainSwitchState.off) else f"t:{self.targetSOC}, c:{self.currentSOC}")
 

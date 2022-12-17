@@ -41,13 +41,16 @@ parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
         help='to mock the telemetrix HW device',default=False)
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
         help='to mock the battery USB-HW device',default=False)
+parser.add_argument('-mq', '--mqttServer',metavar="mqttServer",
+        help='Mqtt server Address',default=None)
 
 args = parser.parse_args()
 
 bm = BatteryManager(args.arduino,
         args.battery1,args.batteryspeed1,
         args.battery2,args.batteryspeed2,
-        mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb)
+        mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
+        mqttServer=args.mqttServer)
 
 try:
     bm.startUp()
