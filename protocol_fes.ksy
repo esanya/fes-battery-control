@@ -15,5 +15,6 @@ seq:
     size: msglen
   - id: checksum
     type: u2
+    doc: CRC calculated by the Crc16Arc algorithm
   - id: endchar
     contents: [0xaa]
