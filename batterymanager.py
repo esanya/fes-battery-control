@@ -11,12 +11,17 @@ import paho.mqtt.client as mqtt
 import json
 import os
 import os.path
+import subprocess
 
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
     def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttTopicRoot= '/fes'):
-        self.telemetrixPort=telemetrixPort
+        if (telemetrixPort != 'auto'):
+            self.telemetrixPort=telemetrixPort
+        else:
+            self.telemetrixPort=self.findTelemetrixPort()
+
         self.control_fifo=control_fifo
         self.arduino_instance_id=arduino_instance_id
         self.mocktelemetrix=mocktelemetrix
@@ -38,6 +43,17 @@ class BatteryManager(object):
         self.reportFile=log_prefix+report_log
         logging.basicConfig(format=format, filename=self.reportFile, level=logging.DEBUG)
 
+    def findTelemetrixPort(self):
+        last_arduino=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i ch341|tail -2').split('\n')
+        if (len(last_arduino) == 0):
+            raise Exception("ardino not connected")
+        elif ('disconnected' in last_arduino[len(last_arduino)-1]):
+            raise Exception("ardino was disconnected")
+        elif ('attached' in last_arduino[len(last_arduino)-1]):
+            index_oftty = last_arduino[len(last_arduino)-1].find('ttyUSB')
+            return '/dev/' + last_arduino[len(last_arduino)-1][index_oftty:]
+        else:
+            raise Exception("ardino was disconnected")
 
     def startUp(self):
         if (self.mocktelemetrix):
