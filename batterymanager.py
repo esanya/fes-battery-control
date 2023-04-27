@@ -7,7 +7,8 @@ import time
 import logging
 import threading
 import re
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as mqttClient
+from paho import mqtt
 import json
 import os
 import os.path
@@ -16,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttTopicRoot= '/fes'):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, mqttTopicRoot= "acbs/fes"):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
@@ -26,12 +27,24 @@ class BatteryManager(object):
         self.arduino_instance_id=arduino_instance_id
         self.mocktelemetrix=mocktelemetrix
         self.mockBattery=mockBattery
-        self.btt1CtrlCable=btt1CtrlCable
+        
+        if (btt1CtrlCable!= 'auto'):
+            self.btt1CtrlCable=btt1CtrlCable
+        else:
+            self.btt1CtrlCable=self.findBttCtrlCable(0)
         self.btt1CableSpeed=btt1CableSpeed
-        self.btt2CtrlCable=btt2CtrlCable
+
+        if (btt2CtrlCable!= 'auto'):
+            self.btt2CtrlCable=btt2CtrlCable
+        else:
+            self.btt2CtrlCable=self.findBttCtrlCable(1)
         self.btt2CableSpeed=btt2CableSpeed
+
         self.mqttServer=mqttServer
+        self.mqttPort=mqttPort
         self.mqttTopicRoot=mqttTopicRoot
+        self.mqttUser=mqttUser
+        self.mqttPassword=mqttPassword
 
         log_prefix=''
         if (mocktelemetrix):
@@ -76,13 +89,18 @@ class BatteryManager(object):
         loopThread = threading.Thread(target=self.mngrLoop)
         loopThread.start()
 
-        self.mqttClient = None
+#        self.mqttClient = None
         if (self.mqttServer != None):
-            self.mqttClient = mqtt.Client()
-            self.mqttClient.on_connect = self.on_connect
-            self.mqttClient.on_message = self.on_message
+            self.mqttClient = mqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
+            if (self.mqttUser != None):
+                self.mqttClient.username_pw_set(self.mqttUser, self.mqttPassword)
+            self.mqttClient.on_connect = self.on_mqtt_connect
+            self.mqttClient.on_message = self.on_mqtt_message
+#            self.mqttClient.on_log= self.on_mqtt_log
     
-            self.mqttClient.connect(self.mqttServer, 1883, 60)
+            if (self.mqttPort == 8883):
+                self.mqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
+            self.mqttClient.connect(self.mqttServer, self.mqttPort)
             self.mqttClient.loop_start()
 
     def getState(self):
@@ -123,7 +141,7 @@ class BatteryManager(object):
 
             self.mngrInnerLoop(line)
             if (self.mqttServer != None and self.mqttClient != None):
-                self.mqttClient.publish(self.mqttTopicRoot+'/state', json.dumps(self.getState()))
+                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
 
             time.sleep(5)
 
@@ -192,15 +210,22 @@ class BatteryManager(object):
             return
     
     # The callback for when the client receives a CONNACK response from the server.
-    def on_connect(self, client, userdata, flags, rc):
-        print("Connected with result code "+str(rc))
+    def on_mqtt_connect(self, client, userdata, flags, rc, properties=None):
+        logging.debug("Connected with result code "+str(rc))
+        logging.debug("Connected with client "+str(client))
+        logging.debug("Connected with userdata "+str(userdata))
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(self.mqttTopicRoot+"/command")
+        client.subscribe(self.mqttTopicRoot+"/command", qos=1)
     
     # The callback for when a PUBLISH message is received from the server.
-    def on_message(self, client, userdata, msg):
+    def on_mqtt_message(self, client, userdata, msg):
         logging.debug('on_message: %s, %s', msg.topic, msg.payload)
         pl=json.loads(msg.payload)
         self.mngrInnerLoop(pl['command'])
+    
+    def on_mqtt_log(self, client, userdata, level, msg):
+        logging.debug("log with client "+str(client))
+        logging.debug("log with userdata "+str(userdata))
+        logging.debug('on_log: %s', msg)
     
