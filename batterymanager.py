@@ -7,27 +7,49 @@ import time
 import logging
 import threading
 import re
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as mqttClient
+from paho import mqtt
 import json
 import os
 import os.path
+import subprocess
 
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttTopicRoot= '/fes'):
-        self.telemetrixPort=telemetrixPort
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, mqttTopicRoot= "acbs/fes", initStateIteration=6, initTelemetricIteration=12):
+        if (telemetrixPort != 'auto'):
+            self.telemetrixPort=telemetrixPort
+        else:
+            self.telemetrixPort=self.findTelemetrixPort()
+
         self.control_fifo=control_fifo
         self.arduino_instance_id=arduino_instance_id
         self.mocktelemetrix=mocktelemetrix
         self.mockBattery=mockBattery
-        self.btt1CtrlCable=btt1CtrlCable
+        
+        if (btt1CtrlCable!= 'auto'):
+            self.btt1CtrlCable=btt1CtrlCable
+        else:
+            self.btt1CtrlCable=self.findBttCtrlCable(0)
         self.btt1CableSpeed=btt1CableSpeed
-        self.btt2CtrlCable=btt2CtrlCable
-        self.btt2CableSpeed=btt2CableSpeed
-        self.mqttServer=mqttServer
-        self.mqttTopicRoot=mqttTopicRoot
 
+        if (btt2CtrlCable!= 'auto'):
+            self.btt2CtrlCable=btt2CtrlCable
+        else:
+            self.btt2CtrlCable=self.findBttCtrlCable(1)
+        self.btt2CableSpeed=btt2CableSpeed
+
+        self.mqttServer=mqttServer
+        self.mqttPort=mqttPort
+        self.mqttTopicRoot=mqttTopicRoot
+        self.mqttUser=mqttUser
+        self.mqttPassword=mqttPassword
+
+        self.initStateIteration=initStateIteration
+        self.initTelemetricIteration=initTelemetricIteration
+        self.stateIteration=self.initStateIteration
+        self.telemetricIteration=self.initTelemetricIteration
         log_prefix=''
         if (mocktelemetrix):
             log_prefix='/tmp/'
@@ -38,6 +60,17 @@ class BatteryManager(object):
         self.reportFile=log_prefix+report_log
         logging.basicConfig(format=format, filename=self.reportFile, level=logging.DEBUG)
 
+    def findTelemetrixPort(self):
+        last_arduino=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i ch341|tail -2').split('\n')
+        if (len(last_arduino) == 0):
+            raise Exception("ardino not connected")
+        elif ('disconnected' in last_arduino[len(last_arduino)-1]):
+            raise Exception("ardino was disconnected")
+        elif ('attached' in last_arduino[len(last_arduino)-1]):
+            index_oftty = last_arduino[len(last_arduino)-1].find('ttyUSB')
+            return '/dev/' + last_arduino[len(last_arduino)-1][index_oftty:]
+        else:
+            raise Exception("ardino was disconnected")
 
     def startUp(self):
         if (self.mocktelemetrix):
@@ -60,13 +93,18 @@ class BatteryManager(object):
         loopThread = threading.Thread(target=self.mngrLoop)
         loopThread.start()
 
-        self.mqttClient = None
+#        self.mqttClient = None
         if (self.mqttServer != None):
-            self.mqttClient = mqtt.Client()
-            self.mqttClient.on_connect = self.on_connect
-            self.mqttClient.on_message = self.on_message
+            self.mqttClient = mqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
+            if (self.mqttUser != None):
+                self.mqttClient.username_pw_set(self.mqttUser, self.mqttPassword)
+            self.mqttClient.on_connect = self.on_mqtt_connect
+            self.mqttClient.on_message = self.on_mqtt_message
+#            self.mqttClient.on_log= self.on_mqtt_log
     
-            self.mqttClient.connect(self.mqttServer, 1883, 60)
+            if (self.mqttPort == 8883):
+                self.mqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
+            self.mqttClient.connect(self.mqttServer, self.mqttPort)
             self.mqttClient.loop_start()
 
     def getState(self):
@@ -74,9 +112,15 @@ class BatteryManager(object):
 #        logging.debug('state: %s', state)
         return state
 
+    def getTelemetric(self):
+        telemetric={'batt1': self.batt1.getTelemetric(), 'batt2': self.batt2.getTelemetric()}
+#        logging.debug('state: %s', state)
+        return telemetric
+
     def initCtrlFifo(self):
         if (os.path.exists(self.control_fifo)):
             os.remove(self.control_fifo)
+        os.system('echo dummy > ' + self.control_fifo + ' &')
         os.mkfifo(self.control_fifo)
         self.ctrlFifo=open(self.control_fifo, 'r')
 
@@ -106,7 +150,17 @@ class BatteryManager(object):
 
             self.mngrInnerLoop(line)
             if (self.mqttServer != None and self.mqttClient != None):
-                self.mqttClient.publish(self.mqttTopicRoot+'/state', json.dumps(self.getState()))
+                if (self.stateIteration<0):
+                    self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                    self.stateIteration=self.initStateIteration
+                else:
+                    self.stateIteration=self.stateIteration-1
+
+                if (self.telemetricIteration<0):
+                    self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
+                    self.telemetricIteration=self.initTelemetricIteration
+                else:
+                    self.telemetricIteration=self.telemetricIteration-1
 
             time.sleep(5)
 
@@ -175,15 +229,22 @@ class BatteryManager(object):
             return
     
     # The callback for when the client receives a CONNACK response from the server.
-    def on_connect(self, client, userdata, flags, rc):
-        print("Connected with result code "+str(rc))
+    def on_mqtt_connect(self, client, userdata, flags, rc, properties=None):
+        logging.debug("Connected with result code "+str(rc))
+        logging.debug("Connected with client "+str(client))
+        logging.debug("Connected with userdata "+str(userdata))
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(self.mqttTopicRoot+"/command")
+        client.subscribe(self.mqttTopicRoot+"/command", qos=1)
     
     # The callback for when a PUBLISH message is received from the server.
-    def on_message(self, client, userdata, msg):
+    def on_mqtt_message(self, client, userdata, msg):
         logging.debug('on_message: %s, %s', msg.topic, msg.payload)
         pl=json.loads(msg.payload)
         self.mngrInnerLoop(pl['command'])
+    
+    def on_mqtt_log(self, client, userdata, level, msg):
+        logging.debug("log with client "+str(client))
+        logging.debug("log with userdata "+str(userdata))
+        logging.debug('on_log: %s', msg)
     

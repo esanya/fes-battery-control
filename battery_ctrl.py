@@ -41,8 +41,14 @@ parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
         help='to mock the telemetrix HW device',default=False)
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
         help='to mock the battery USB-HW device',default=False)
-parser.add_argument('-mq', '--mqttServer',metavar="mqttServer",
+parser.add_argument('-mqs', '--mqttServer',metavar="mqttServer",
         help='Mqtt server Address',default=None)
+parser.add_argument('-mqp', '--mqttPort',metavar="mqttPort",
+        help='Mqtt server Port',type=int,default=1883)
+parser.add_argument('-mqu', '--mqttUser',metavar="mqttUser",
+        help='Mqtt server User',default=None)
+parser.add_argument('-mqw', '--mqttPassword',metavar="mqttPassword",
+        help='Mqtt server Password',default=None)
 
 args = parser.parse_args()
 
@@ -50,12 +56,13 @@ bm = BatteryManager(args.arduino,
         args.battery1,args.batteryspeed1,
         args.battery2,args.batteryspeed2,
         mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
-        mqttServer=args.mqttServer)
+        mqttServer=args.mqttServer, mqttPort=args.mqttPort, mqttUser=args.mqttUser, mqttPassword=args.mqttPassword)
 
 try:
     bm.startUp()
 except KeyboardInterrupt:
     bm.shutdown()
-except Exception:
+except Exception as e:
+    print(e)
     bm.shutdown()
 

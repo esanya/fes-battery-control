@@ -178,22 +178,22 @@ class FES(object):
         return value
 
     def tmin(self):
-        self.requestFor(self.messages.MESSAGES['TMIN'], "tmin response read")
+        return self.requestFor(self.messages.MESSAGES['TMIN'], "tmin response read")
 
     def tmax(self):
-        self.requestFor(self.messages.MESSAGES['TMAX'], "tmax response read")
+        return self.requestFor(self.messages.MESSAGES['TMAX'], "tmax response read")
 
     def cmin(self):
-        self.requestFor(self.messages.MESSAGES['CMIN'], "cmin response read")
+        return self.requestFor(self.messages.MESSAGES['CMIN'], "cmin response read")
 
     def cmax(self):
-        self.requestFor(self.messages.MESSAGES['CMAX'], "cmax response read")
+        return self.requestFor(self.messages.MESSAGES['CMAX'], "cmax response read")
 
     def minh(self):
-        self.requestFor(self.messages.MESSAGES['MINH'], "minh response read")
+        return self.requestFor(self.messages.MESSAGES['MINH'], "minh response read")
 
     def maxh(self):
-        self.requestFor(self.messages.MESSAGES['MAXH'], "maxh response read")
+        return self.requestFor(self.messages.MESSAGES['MAXH'], "maxh response read")
         
     def lcd1(self):
         debugMessage="lcd1 response read"
@@ -231,10 +231,10 @@ class FES(object):
 
         
     def cell(self):
-        self.requestFor(self.messages.MESSAGES['CELL'], "cell response read")
+        return self.requestFor(self.messages.MESSAGES['CELL'], "cell response read")
         
     def tbal(self):
-        self.requestFor(self.messages.MESSAGES['CELL'], "cell response read")
+        return self.requestFor(self.messages.MESSAGES['TBAL'], "cell response read")
 
 
 
