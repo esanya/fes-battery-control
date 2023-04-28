@@ -17,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, mqttTopicRoot= "acbs/fes"):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, mqttTopicRoot= "acbs/fes", initStateIteration=6, initTelemetricIteration=12):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
@@ -46,6 +46,10 @@ class BatteryManager(object):
         self.mqttUser=mqttUser
         self.mqttPassword=mqttPassword
 
+        self.initStateIteration=initStateIteration
+        self.initTelemetricIteration=initTelemetricIteration
+        self.stateIteration=self.initStateIteration
+        self.telemetricIteration=self.initTelemetricIteration
         log_prefix=''
         if (mocktelemetrix):
             log_prefix='/tmp/'
@@ -108,6 +112,11 @@ class BatteryManager(object):
 #        logging.debug('state: %s', state)
         return state
 
+    def getTelemetric(self):
+        telemetric={'batt1': self.batt1.getTelemetric(), 'batt2': self.batt2.getTelemetric()}
+#        logging.debug('state: %s', state)
+        return telemetric
+
     def initCtrlFifo(self):
         if (os.path.exists(self.control_fifo)):
             os.remove(self.control_fifo)
@@ -141,7 +150,17 @@ class BatteryManager(object):
 
             self.mngrInnerLoop(line)
             if (self.mqttServer != None and self.mqttClient != None):
-                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                if (self.stateIteration<0):
+                    self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                    self.stateIteration=self.initStateIteration
+                else:
+                    self.stateIteration=self.stateIteration-1
+
+                if (self.telemetricIteration<0):
+                    self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
+                    self.telemetricIteration=self.initTelemetricIteration
+                else:
+                    self.telemetricIteration=self.telemetricIteration-1
 
             time.sleep(5)
 

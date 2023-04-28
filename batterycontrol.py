@@ -42,6 +42,15 @@ class BatteryControl(object):
         state={'ctrlstate': str(self.ctrlstate), 'btrystate': str(self.btrystate), 'targetSOC': self.targetSOC, 'currentSOC': self.currentSOC, 'socFailCount': self.socFailCount}
         return state
 
+    def getTelemetric(self):
+        if (self.btrystate == BtryMainSwitchState.on and self.battery != None):
+            telemetric={'tmin': str(self.battery.tmin()), 'tmax': str(self.battery.tmax()), 'cmin': str(self.battery.cmin()), 'cmax': str(self.battery.cmax()), 'minh': str(self.battery.minh()), 'maxh': str(self.battery.maxh()), 'tbal': str(self.battery.tbal())}
+            #, 'cell': str(self.battery.cell())
+        else:
+            telemetric={'ctrlstate': str(self.ctrlstate), 'btrystate': str(self.btrystate)}
+
+        return telemetric
+
     def shortInfo(self):
         return f"{self.name} "+("off" if (self.btrystate==BtryMainSwitchState.off) else f"t:{self.targetSOC}, c:{self.currentSOC}")
 
