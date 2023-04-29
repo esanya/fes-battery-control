@@ -147,21 +147,7 @@ class BatteryManager(object):
     def mngrLoop(self):
         while(self.mngrLoopEnabled):
             line=self.ctrlFifo.readline()
-
             self.mngrInnerLoop(line)
-            if (self.mqttServer != None and self.mqttClient != None):
-                if (self.stateIteration<0):
-                    self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
-                    self.stateIteration=self.initStateIteration
-                else:
-                    self.stateIteration=self.stateIteration-1
-
-                if (self.telemetricIteration<0):
-                    self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
-                    self.telemetricIteration=self.initTelemetricIteration
-                else:
-                    self.telemetricIteration=self.telemetricIteration-1
-
             time.sleep(5)
 
     def mngrInnerLoop(self, line):
@@ -184,8 +170,21 @@ class BatteryManager(object):
         self.batt2.doManagement()
 
         self.printCurrentStateToLcd()
+        self.publishMqttState():
 
+    def publishMqttState(self):
+        if (self.mqttServer != None and self.mqttClient != None):
+            if (self.stateIteration<0):
+                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                self.stateIteration=self.initStateIteration
+            else:
+                self.stateIteration=self.stateIteration-1
 
+            if (self.telemetricIteration<0):
+                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
+                self.telemetricIteration=self.initTelemetricIteration
+            else:
+                self.telemetricIteration=self.telemetricIteration-1
 
     def printCurrentStateToLcd(self):
         self.lcd.clear()
