@@ -120,8 +120,8 @@ class BatteryManager(object):
     def initCtrlFifo(self):
         if (os.path.exists(self.control_fifo)):
             os.remove(self.control_fifo)
-        os.system('echo dummy > ' + self.control_fifo + ' &')
         os.mkfifo(self.control_fifo)
+        os.system('echo dummy > ' + self.control_fifo + ' &')
         self.ctrlFifo=open(self.control_fifo, 'r')
 
     def __repr__(self):
