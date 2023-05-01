@@ -109,12 +109,10 @@ class BatteryManager(object):
 
     def getState(self):
         state={'batt1': self.batt1.getState(), 'batt2': self.batt2.getState()}
-#        logging.debug('state: %s', state)
         return state
 
     def getTelemetric(self):
         telemetric={'batt1': self.batt1.getTelemetric(), 'batt2': self.batt2.getTelemetric()}
-#        logging.debug('state: %s', state)
         return telemetric
 
     def initCtrlFifo(self):
