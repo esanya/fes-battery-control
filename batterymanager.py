@@ -168,7 +168,7 @@ class BatteryManager(object):
         self.batt2.doManagement()
 
         self.printCurrentStateToLcd()
-        self.publishMqttState():
+        self.publishMqttState()
 
     def publishMqttState(self):
         if (self.mqttServer != None and self.mqttClient != None):

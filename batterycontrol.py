@@ -25,6 +25,8 @@ class BatteryControl(object):
         self.targetSOC=50
         self.currentSOC=-1
         self.socFailCount=0
+        self.currentValue={}
+        self.valueReadFailCount={}
         self.mockBattery=mockBattery
         self.usbCtrlCable=usbCtrlCable
         self.usbCableSpeed=usbCableSpeed
@@ -44,10 +46,21 @@ class BatteryControl(object):
 
     def getTelemetric(self):
         if (self.btrystate == BtryMainSwitchState.on and self.battery != None):
-            telemetric={'tmin': str(self.battery.tmin()), 'tmax': str(self.battery.tmax()), 'cmin': str(self.battery.cmin()), 'cmax': str(self.battery.cmax()), 'minh': str(self.battery.minh()), 'maxh': str(self.battery.maxh()), 'tbal': str(self.battery.tbal())}
-            #, 'cell': str(self.battery.cell())
-        else:
-            telemetric={'ctrlstate': str(self.ctrlstate), 'btrystate': str(self.btrystate)}
+            self.getCurrentTmin(True)
+            self.getCurrentTmax(True)
+            self.getCurrentCmin(True)
+            self.getCurrentCmax(True)
+            self.getCurrentMinh(True)
+            self.getCurrentMaxh(True)
+
+        telemetric={
+                'tmin': str(self.currentValue.get(self.battery.tmin.__name__)), 
+                'tmax': str(self.currentValue.get(self.battery.tmax.__name__)), 
+                'cmin': str(self.currentValue.get(self.battery.cmin.__name__)), 
+                'cmax': str(self.currentValue.get(self.battery.cmax.__name__)), 
+                'minh': str(self.currentValue.get(self.battery.minh.__name__)), 
+                'maxh': str(self.currentValue.get(self.battery.maxh.__name__)), 
+                'tbal': str(self.currentValue.get(self.battery.tbal.__name__))}
 
         return telemetric
 
@@ -70,6 +83,42 @@ class BatteryControl(object):
 
     def setTargetSoc(self,targetSOC=50):
         self.targetSOC=targetSOC
+
+    def getCurrentTmin(self, refresh=False):
+        return self.getValueByName(self.battery.tmin, refresh)
+
+    def getCurrentTmax(self, refresh=False):
+        return self.getValueByName(self.battery.tmax, refresh)
+
+    def getCurrentCmin(self, refresh=False):
+        return self.getValueByName(self.battery.cmin, refresh)
+
+    def getCurrentCmax(self, refresh=False):
+        return self.getValueByName(self.battery.cmax, refresh)
+
+    def getCurrentMinh(self, refresh=False):
+        return self.getValueByName(self.battery.minh, refresh)
+
+    def getCurrentMaxh(self, refresh=False):
+        return self.getValueByName(self.battery.maxh, refresh)
+
+    def getValueByName(self, method, refresh):
+        if (refresh and self.mockBattery == False):
+            try:
+                self.currentValue[method.__name__]=method()
+                self.valueReadFailCount[method.__name__]=0
+            except IndexError:
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue[method.__name__], self.self.valueReadFailCount[method.__name__])
+                self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+            except Exception:
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue[method.__name__], self.self.valueReadFailCount[method.__name__])
+                self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+        elif (refresh and self.mockBattery == True):
+            self.currentValue[method.__name__]=self.currentValue[method.__name__]+1
+
+        return self.currentValue.get(method.__name__)
 
     def getCurrentSOC(self, refresh=False):
         if (refresh and self.mockBattery == False):
