@@ -148,7 +148,7 @@ class BatteryManager(object):
             self.mngrInnerLoop(line)
             time.sleep(5)
 
-    def mngrInnerLoop(self, line):
+    def mngrInnerLoop(self, line, immediateNotification=False):
         if (line != ''):
             logging.debug('command received: %s', line.replace('\n',''))
 
@@ -168,17 +168,17 @@ class BatteryManager(object):
         self.batt2.doManagement()
 
         self.printCurrentStateToLcd()
-        self.publishMqttState()
+        self.publishMqttState(immediateNotification)
 
-    def publishMqttState(self):
+    def publishMqttState(self, immediateNotification):
         if (self.mqttServer != None and self.mqttClient != None):
-            if (self.stateIteration<0):
+            if (self.stateIteration<0 or immediateNotification):
                 self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
                 self.stateIteration=self.initStateIteration
             else:
                 self.stateIteration=self.stateIteration-1
 
-            if (self.telemetricIteration<0):
+            if (self.telemetricIteration<0 or immediateNotification):
                 self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
                 self.telemetricIteration=self.initTelemetricIteration
             else:
@@ -238,7 +238,7 @@ class BatteryManager(object):
     def on_mqtt_message(self, client, userdata, msg):
         logging.debug('on_message: %s, %s', msg.topic, msg.payload)
         pl=json.loads(msg.payload)
-        self.mngrInnerLoop(pl['command'])
+        self.mngrInnerLoop(pl['command'], True)
     
     def on_mqtt_log(self, client, userdata, level, msg):
         logging.debug("log with client "+str(client))
