@@ -17,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, mqttTopicRoot= "acbs/fes", initStateIteration=6, initTelemetricIteration=12):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, initStateIteration=6, initTelemetricIteration=12):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
