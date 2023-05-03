@@ -89,35 +89,43 @@ class BatteryControl(object):
         self.targetSOC=targetSOC
 
     def getCurrentTmin(self, refresh=False):
-        return self.getValueByName(self.battery.tmin, refresh)
+        return self.getValueByName(self.battery.tmin, refresh, float)
 
     def getCurrentTmax(self, refresh=False):
-        return self.getValueByName(self.battery.tmax, refresh)
+        return self.getValueByName(self.battery.tmax, refresh, float)
 
     def getCurrentCmin(self, refresh=False):
-        return self.getValueByName(self.battery.cmin, refresh)
+        return self.getValueByName(self.battery.cmin, refresh, float)
 
     def getCurrentCmax(self, refresh=False):
-        return self.getValueByName(self.battery.cmax, refresh)
+        return self.getValueByName(self.battery.cmax, refresh, float)
 
     def getCurrentMinh(self, refresh=False):
-        return self.getValueByName(self.battery.minh, refresh)
+        return self.getValueByName(self.battery.minh, refresh, float)
 
     def getCurrentMaxh(self, refresh=False):
-        return self.getValueByName(self.battery.maxh, refresh)
+        return self.getValueByName(self.battery.maxh, refresh, float)
+#
+#    def getCurrentSOC(self, refresh=False):
+#        return self.getValueByName(self.battery.soc, refresh)
 
-    def getValueByName(self, method, refresh):
+    def getValueByName(self, method, refresh, conversion=None):
         if (refresh and self.mockBattery == False):
             try:
-                self.currentValue[method.__name__]=method()
+                value=method()
+                if (conversion != None):
+                    self.currentValue[method.__name__]=conversion(value)
+                else:
+                    self.currentValue[method.__name__]=value
+
                 self.valueReadFailCount[method.__name__]=0
             except IndexError:
                 logging.info('could not read %s, keeping the previous state %s, failCount %s', 
-                        method.__name__, self.currentValue[method.__name__], self.self.valueReadFailCount[method.__name__])
+                        method.__name__, self.currentValue[method.__name__], self.valueReadFailCount[method.__name__])
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
             except Exception:
                 logging.info('could not read %s, keeping the previous state %s, failCount %s', 
-                        method.__name__, self.currentValue[method.__name__], self.self.valueReadFailCount[method.__name__])
+                        method.__name__, self.currentValue[method.__name__], self.valueReadFailCount[method.__name__])
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
         elif (refresh and self.mockBattery == True):
             self.currentValue[method.__name__]=self.currentValue[method.__name__]+1
@@ -127,7 +135,7 @@ class BatteryControl(object):
     def getCurrentSOC(self, refresh=False):
         if (refresh and self.mockBattery == False):
             try:
-                self.currentSOC=self.battery.soc()
+                self.currentSOC=round(self.battery.soc(), 2)
                 self.socFailCount=0
             except IndexError:
                 logging.info('could not read soc, keeping the previous state %s, failCount %s', self.currentSOC, self.socFailCount)
