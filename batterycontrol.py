@@ -33,6 +33,7 @@ class BatteryControl(object):
 #        sel
 
         self.board=board
+        self.battery=None
         self.initPin()
         self.initBoard()
 
@@ -53,7 +54,8 @@ class BatteryControl(object):
             self.getCurrentMinh(True)
             self.getCurrentMaxh(True)
 
-        telemetric={
+        if (self.battery != None):
+            telemetric={
                 'tmin': str(self.currentValue.get(self.battery.tmin.__name__)), 
                 'tmax': str(self.currentValue.get(self.battery.tmax.__name__)), 
                 'cmin': str(self.currentValue.get(self.battery.cmin.__name__)), 
@@ -61,6 +63,8 @@ class BatteryControl(object):
                 'minh': str(self.currentValue.get(self.battery.minh.__name__)), 
                 'maxh': str(self.currentValue.get(self.battery.maxh.__name__)), 
                 'tbal': str(self.currentValue.get(self.battery.tbal.__name__))}
+        else:
+            telemetric={}
 
         return telemetric
 
