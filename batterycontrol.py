@@ -118,13 +118,13 @@ class BatteryControl(object):
 
                 self.valueReadFailCount[method.__name__]=0
             except IndexError:
-                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
-                        method.__name__, self.currentValue[method.__name__], self.valueReadFailCount[method.__name__])
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
             except Exception:
-                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
-                        method.__name__, self.currentValue[method.__name__], self.valueReadFailCount[method.__name__])
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
         elif (refresh and self.mockBattery == True):
             self.currentValue[method.__name__]=self.currentValue[method.__name__]+1
 
