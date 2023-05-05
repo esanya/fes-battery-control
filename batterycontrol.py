@@ -11,8 +11,6 @@ BtryMainSwitchState = Enum('BtryMainSwitchState', 'off on')
 #charging       
 #discharging    
 
-diffEpsSOC=1
-
 class BatteryControl(object):
     def __init__(self, name, board, chargerPin, disChargerPin, mainSwitchServoPin, usbCtrlCable, usbCableSpeed, mockBattery=False):
         self.name=name
@@ -25,12 +23,15 @@ class BatteryControl(object):
         self.targetSOC=50
         self.currentSOC=-1
         self.socFailCount=0
+        self.currentValue={}
+        self.valueReadFailCount={}
         self.mockBattery=mockBattery
         self.usbCtrlCable=usbCtrlCable
         self.usbCableSpeed=usbCableSpeed
 #        sel
 
         self.board=board
+        self.battery=None
         self.initPin()
         self.initBoard()
 
@@ -44,10 +45,24 @@ class BatteryControl(object):
 
     def getTelemetric(self):
         if (self.btrystate == BtryMainSwitchState.on and self.battery != None):
-            telemetric={'tmin': str(self.battery.tmin()), 'tmax': str(self.battery.tmax()), 'cmin': str(self.battery.cmin()), 'cmax': str(self.battery.cmax()), 'minh': str(self.battery.minh()), 'maxh': str(self.battery.maxh()), 'tbal': str(self.battery.tbal())}
-            #, 'cell': str(self.battery.cell())
+            self.getCurrentTmin(True)
+            self.getCurrentTmax(True)
+            self.getCurrentCmin(True)
+            self.getCurrentCmax(True)
+            self.getCurrentMinh(True)
+            self.getCurrentMaxh(True)
+
+        if (self.battery != None):
+            telemetric={
+                'tmin': str(self.currentValue.get(self.battery.tmin.__name__)), 
+                'tmax': str(self.currentValue.get(self.battery.tmax.__name__)), 
+                'cmin': str(self.currentValue.get(self.battery.cmin.__name__)), 
+                'cmax': str(self.currentValue.get(self.battery.cmax.__name__)), 
+                'minh': str(self.currentValue.get(self.battery.minh.__name__)), 
+                'maxh': str(self.currentValue.get(self.battery.maxh.__name__)), 
+                'tbal': str(self.currentValue.get(self.battery.tbal.__name__))}
         else:
-            telemetric={'ctrlstate': str(self.ctrlstate), 'btrystate': str(self.btrystate)}
+            telemetric={}
 
         return telemetric
 
@@ -71,10 +86,54 @@ class BatteryControl(object):
     def setTargetSoc(self,targetSOC=50):
         self.targetSOC=targetSOC
 
+    def getCurrentTmin(self, refresh=False):
+        return self.getValueByName(self.battery.tmin, refresh, float)
+
+    def getCurrentTmax(self, refresh=False):
+        return self.getValueByName(self.battery.tmax, refresh, float)
+
+    def getCurrentCmin(self, refresh=False):
+        return self.getValueByName(self.battery.cmin, refresh, float)
+
+    def getCurrentCmax(self, refresh=False):
+        return self.getValueByName(self.battery.cmax, refresh, float)
+
+    def getCurrentMinh(self, refresh=False):
+        return self.getValueByName(self.battery.minh, refresh, float)
+
+    def getCurrentMaxh(self, refresh=False):
+        return self.getValueByName(self.battery.maxh, refresh, float)
+#
+#    def getCurrentSOC(self, refresh=False):
+#        return self.getValueByName(self.battery.soc, refresh)
+
+    def getValueByName(self, method, refresh, conversion=None):
+        if (refresh and self.mockBattery == False):
+            try:
+                value=method()
+                if (conversion != None):
+                    self.currentValue[method.__name__]=conversion(value)
+                else:
+                    self.currentValue[method.__name__]=value
+
+                self.valueReadFailCount[method.__name__]=0
+            except IndexError:
+                self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
+            except Exception:
+                self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
+                logging.info('could not read %s, keeping the previous state %s, failCount %s', 
+                        method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
+        elif (refresh and self.mockBattery == True):
+            self.currentValue[method.__name__]=self.currentValue[method.__name__]+1
+
+        return self.currentValue.get(method.__name__)
+
     def getCurrentSOC(self, refresh=False):
         if (refresh and self.mockBattery == False):
             try:
-                self.currentSOC=self.battery.soc()
+                self.currentSOC=round(self.battery.soc(), 2)
                 self.socFailCount=0
             except IndexError:
                 logging.info('could not read soc, keeping the previous state %s, failCount %s', self.currentSOC, self.socFailCount)

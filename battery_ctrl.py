@@ -49,6 +49,8 @@ parser.add_argument('-mqu', '--mqttUser',metavar="mqttUser",
         help='Mqtt server User',default=None)
 parser.add_argument('-mqw', '--mqttPassword',metavar="mqttPassword",
         help='Mqtt server Password',default=None)
+parser.add_argument('-mqtr', '--mqttTopicRoot',metavar="mqttTopicRoot",
+        help='Mqtt Topic Root',default="acbs/fes")
 
 args = parser.parse_args()
 
@@ -56,7 +58,8 @@ bm = BatteryManager(args.arduino,
         args.battery1,args.batteryspeed1,
         args.battery2,args.batteryspeed2,
         mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
-        mqttServer=args.mqttServer, mqttPort=args.mqttPort, mqttUser=args.mqttUser, mqttPassword=args.mqttPassword)
+        mqttServer=args.mqttServer, mqttPort=args.mqttPort, mqttUser=args.mqttUser, 
+        mqttPassword=args.mqttPassword, mqttTopicRoot=args.mqttTopicRoot)
 
 try:
     bm.startUp()
