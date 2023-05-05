@@ -11,8 +11,6 @@ BtryMainSwitchState = Enum('BtryMainSwitchState', 'off on')
 #charging       
 #discharging    
 
-diffEpsSOC=1
-
 class BatteryControl(object):
     def __init__(self, name, board, chargerPin, disChargerPin, mainSwitchServoPin, usbCtrlCable, usbCableSpeed, mockBattery=False):
         self.name=name

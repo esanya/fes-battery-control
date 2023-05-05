@@ -60,17 +60,23 @@ class BatteryManager(object):
         self.reportFile=log_prefix+report_log
         logging.basicConfig(format=format, filename=self.reportFile, level=logging.DEBUG)
 
+    def findBttCtrlCable(self, cableId):
+        return findUsbPortIntern('ptx24235', '4', cableId)
+
     def findTelemetrixPort(self):
-        last_arduino=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i ch341|tail -2').split('\n')
-        if (len(last_arduino) == 0):
-            raise Exception("ardino not connected")
-        elif ('disconnected' in last_arduino[len(last_arduino)-1]):
-            raise Exception("ardino was disconnected")
-        elif ('attached' in last_arduino[len(last_arduino)-1]):
-            index_oftty = last_arduino[len(last_arduino)-1].find('ttyUSB')
-            return '/dev/' + last_arduino[len(last_arduino)-1][index_oftty:]
+        return findUsbPortIntern('ch341', '2', 0)
+
+    def findUsbPortIntern(self, pattern, lastEntries, portId):
+        last_usb=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i '+pattern+'|tail -'+lastEntries).split('\n')
+        if (len(last_usb) == 0):
+            raise Exception(pattern+" not connected")
+        elif ('disconnected' in last_usb[len(last_usb)-1]):
+            raise Exception(pattern+" was disconnected")
+        elif ('attached' in last_usb[len(last_usb)-1]):
+            index_oftty = last_usb[len(last_usb)-1].find('ttyUSB')
+            return '/dev/' + last_usb[len(last_usb)-1][index_oftty:]
         else:
-            raise Exception("ardino was disconnected")
+            raise Exception(pattern+" was disconnected")
 
     def startUp(self):
         if (self.mocktelemetrix):
