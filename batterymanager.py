@@ -61,10 +61,10 @@ class BatteryManager(object):
         logging.basicConfig(format='%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s - %(message)s', filename=self.reportFile, level=loglevel)
 
     def findBttCtrlCable(self, cableId):
-        return findUsbPortIntern('ptx24235', '4', cableId)
+        return self.findUsbPortIntern('FTDI', '4', cableId)
 
     def findTelemetrixPort(self):
-        return findUsbPortIntern('ch341', '2', 0)
+        return self.findUsbPortIntern('ch341', '2', 0)
 
     def findUsbPortIntern(self, pattern, lastEntries, portId):
         last_usb=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i '+pattern+'|tail -'+lastEntries).split('\n')
