@@ -242,13 +242,13 @@ class BatteryControl(object):
         self.getCurrentSOC(True)
 
         if (self.ctrlstate == CtrlState.charging and self.currentSOC >= self.targetSOC):
-            logging.info('target SOC %s reached %s', self.targetSOC, self.currentSOC)
+            logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
         elif (self.ctrlstate == CtrlState.discharging and self.currentSOC <= self.targetSOC):
-            logging.info('target SOC %s reached %s', self.targetSOC, self.currentSOC)
+            logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
         else:
-            logging.debug('target SOC %s not reached %s', self.targetSOC, self.currentSOC)
+            logging.info('target SOC %s not reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
 
     def storeExceptions(self, operation, e):
         if (not(operation in self.operationExceptions)):
