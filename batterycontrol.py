@@ -128,12 +128,12 @@ class BatteryControl(object):
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
                 logging.warn('could not read %s, keeping the previous state %s, failCount %s', 
                         method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
-                self.storeExceptions(method, e)
+                self.storeExceptions(method.__name__, e)
             except Exception as e:
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
                 logging.warn('could not read %s, keeping the previous state %s, failCount %s', 
                         method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
-                self.storeExceptions(method, e)
+                self.storeExceptions(method.__name__, e)
         elif (refresh and self.mockBattery == True):
             self.currentValue[method.__name__]=self.currentValue[method.__name__]+1
 
