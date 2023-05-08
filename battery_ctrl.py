@@ -14,6 +14,7 @@
 
 import argparse
 import sys
+import logging
 from batterymanager import BatteryManager
 
 VERSION="0.10"    
@@ -51,6 +52,8 @@ parser.add_argument('-mqw', '--mqttPassword',metavar="mqttPassword",
         help='Mqtt server Password',default=None)
 parser.add_argument('-mqtr', '--mqttTopicRoot',metavar="mqttTopicRoot",
         help='Mqtt Topic Root',default="acbs/fes")
+parser.add_argument('-loglevel', '--loglevel',metavar="loglevel",
+        help='LogLevel: DEBUG, ERROR, FATAL, INFO, WARNING',default=logging.INFO)
 
 args = parser.parse_args()
 
@@ -59,7 +62,7 @@ bm = BatteryManager(args.arduino,
         args.battery2,args.batteryspeed2,
         mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
         mqttServer=args.mqttServer, mqttPort=args.mqttPort, mqttUser=args.mqttUser, 
-        mqttPassword=args.mqttPassword, mqttTopicRoot=args.mqttTopicRoot)
+        mqttPassword=args.mqttPassword, mqttTopicRoot=args.mqttTopicRoot, loglevel=args.loglevel)
 
 try:
     bm.startUp()
