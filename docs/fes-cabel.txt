@@ -1,0 +1,22 @@
+
+ge ro xx xx xx
+
+ or xx xx xx xx
+
+sc xx br we xx
+
+
+usb: ge, ro, or, bl
+lade gr: br, we
+
+
+
+
+
+ge(lb)
+ro(t)
+or(ange)
+sc(hwarz)
+
+br(aun)
+we(iss)
