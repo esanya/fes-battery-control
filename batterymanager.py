@@ -17,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, initStateIteration=6, initTelemetricIteration=12):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, initStateIteration=6, initTelemetricIteration=12, loglevel=logging.DEBUG):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
@@ -58,13 +58,13 @@ class BatteryManager(object):
 #            log_prefix='/var/log'
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         self.reportFile=log_prefix+report_log
-        logging.basicConfig(format=format, filename=self.reportFile, level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s - %(message)s', filename=self.reportFile, level=loglevel)
 
     def findBttCtrlCable(self, cableId):
-        return findUsbPortIntern('ptx24235', '4', cableId)
+        return self.findUsbPortIntern('FTDI', '4', cableId)
 
     def findTelemetrixPort(self):
-        return findUsbPortIntern('ch341', '2', 0)
+        return self.findUsbPortIntern('ch341', '2', 0)
 
     def findUsbPortIntern(self, pattern, lastEntries, portId):
         last_usb=subprocess.getoutput('dmesg |grep -i ttyusb|grep -i '+pattern+'|tail -'+lastEntries).split('\n')

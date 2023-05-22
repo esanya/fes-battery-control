@@ -47,21 +47,22 @@ class FES(object):
         self.passwd="unknown"
         
     def open(self):
-        logging.debug("opening device %s\n",self.device)
+        logging.debug("opening device %s",self.device)
         if self.opened:
-            logging.error("cannot open device %s more than once!\n",self.device)
+            logging.error("cannot open device %s more than once!",self.device)
             return
         try:
             self.ser=serial.Serial(self.device, self.speed,timeout=30)
             self.opened=True
         except Exception as ex:
-            logging.fatal("%s\n",ex)
+            logging.fatal("%s",ex)
+            raise ex
 
     def isOpened(self):
         return self.opened
 
     def isConnected(self):
-        logging.debug("isConnected:%s\n",self.connected)
+        logging.debug("isConnected:%s",self.connected)
         return self.connected
     
     def close(self):
@@ -69,29 +70,29 @@ class FES(object):
             self.ser.close()
             self.opened=False
         else:
-            self.warn("could not close device; %s iss not open\n",self.device)
+            logging.warn("could not close device; %s iss not open",self.device)
 
     def send(self,data,exp=None):
         if self.ser.in_waiting>0:
             stale=self.ser.read_all()
-            self.warn("read stale bytes from device: %s\n",stale)
-        logging.debug("sending:%s\n",data)
+            logging.warn("read stale bytes from device: %s",stale)
+        logging.debug("sending:%s",data)
         self.ser.write(bytes(data))
         if exp!=None:
             ack=self.ser.read(len(exp))
             if ack==exp:
-                logging.debug("got acknowledge\n")
+                logging.debug("got acknowledge")
             else:
-                logging.fatal("didn't got acknowledge; got:%s\n",ack)
+                logging.fatal("didn't got acknowledge; got:%s",ack)
         else:
-            logging.debug("no acknowledge expected!\n")
+            logging.debug("no acknowledge expected!")
 
     def _check(self):
         if not self.connected:
             logging.fatal("connection failed! Could not detect FES battery!")
 
     def decodeMessage(self,data,id=0):
-#        logging.info("Type of data %s\n", type(data))
+#        logging.info("Type of data %s", type(data))
 
 #        if data[0] != BEGIN_CHAR
 #            logging.error("Message does not start with 0x55")
@@ -109,19 +110,21 @@ class FES(object):
         return decoded
         
     def connect(self):
-        logging.debug("connecting...\n")
+        logging.debug("connecting...")
         self.send(self.messages.MESSAGES['IDN?'])
-        logging.debug("reading serial\n")
+        logging.debug("reading serial")
         time.sleep(0.1)
         resp=self.ser.read_all()
-        logging.debug("response read:%s\n",resp)
+        logging.debug("response read:%s",resp)
 
         self.identifier=self.decodeMessage(resp)
 
         self.connected=True
         self._check()
-        logging.debug("...connected!\n")
-        logging.info("Identifier detected:%s\n",self.identifier)
+        logging.debug("...connected!")
+        logging.info("Identifier detected:%s",self.identifier)
+
+        return self.identifier
         
     def password(self):
         self.send(self.messages.MESSAGES['PASS'])
@@ -129,21 +132,23 @@ class FES(object):
         resp=self.ser.read_all()
         logging.debug("pass response read:%s",resp)
         self.passwd=self.decodeMessage(resp)
-        logging.info("Received password :%s\n",self.passwd)
+        logging.info("Received password :%s",self.passwd)
+
+        return self.passwd
 
     def requestForRaw(self, requestStr, debugMessage, lenpos):
         self.send(requestStr)
         time.sleep(0.1)
         resp=self.ser.read_all()
         fragmentCount = 10
-        logging.debug("%s from %s %s\n", debugMessage, self.ser, resp)
+        logging.debug("%s from %s %s", debugMessage, self.ser, resp)
         while (len(resp) < lenpos and fragmentCount>=0):
             time.sleep(0.2)
             newresp=self.ser.read_all()
-            logging.debug("newresp %s from %s: %s at step %s\n", debugMessage, self.ser, resp, fragmentCount)
+            logging.debug("newresp %s from %s: %s at step %s", debugMessage, self.ser, resp, fragmentCount)
             resp1=b''.join([resp, newresp])
             resp=resp1
-            logging.debug("%s: %s\n", debugMessage, resp)
+            logging.debug("%s: %s", debugMessage, resp)
             fragmentCount=fragmentCount-1
 
         fragmentCount = 10
@@ -152,18 +157,18 @@ class FES(object):
         else:
             return resp
 
-        logging.info("message len: %s\n", msglen)
+        logging.debug("message len: %s", msglen)
         totallen=lenpos+msglen+3
-        logging.info("total len message len: %s\n", totallen)
+        logging.debug("total len message len: %s", totallen)
 
         while (len(resp) < totallen and fragmentCount>=0):
             time.sleep(0.1)
             newresp=self.ser.read_all()
-            logging.debug("newresp %s from %s: %s at step %s\n", debugMessage, self.ser, resp, fragmentCount)
+            logging.debug("newresp %s from %s: %s at step %s", debugMessage, self.ser, resp, fragmentCount)
             resp1=b''.join([resp, newresp])
             resp=resp1
 #            msglen=resp[3]
-            logging.debug("%s: %s\n", debugMessage, resp)
+            logging.debug("%s: %s", debugMessage, resp)
             fragmentCount=fragmentCount-1
 
 
@@ -173,7 +178,7 @@ class FES(object):
         resp=self.requestForRaw(requestStr, debugMessage, 3)
 
         value=self.decodeMessage(resp)
-        logging.info("%s: %s\n", debugMessage, value)
+        logging.info("%s: %s", debugMessage, value)
 
         return value
 
@@ -200,9 +205,9 @@ class FES(object):
         try:
             self.requestFor(self.messages.MESSAGES['LCD1'], debugMessage)
         except IndexError:
-            logging.error("%s: invalid read\n", debugMessage)
+            logging.error("%s: invalid read", debugMessage)
         except Exception:
-            logging.error("%s: invalid read\n", debugMessage)
+            logging.error("%s: invalid read", debugMessage)
         
     def soc(self):
         debugMessage="soc response read"
@@ -218,15 +223,15 @@ class FES(object):
 
 
         
-            logging.info("%s: %s\n", debugMessage, value)
+            logging.info("%s: %s", debugMessage, value)
 
             return value
 
         except IndexError:
-            logging.error("%s: invalid read (IndexError)\n", debugMessage)
+            logging.error("%s: invalid read (IndexError)", debugMessage)
             raise
         except Exception:
-            logging.error("%s: invalid read (Exception)\n", debugMessage)
+            logging.error("%s: invalid read (Exception)", debugMessage)
             raise
 
         
