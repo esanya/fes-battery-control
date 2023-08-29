@@ -232,11 +232,11 @@ class BatteryControl(object):
     def doManagement(self):
         if (self.btrystate != BtryMainSwitchState.on):
             logging.debug('the battery is in %s state, please switch on it before', self.btrystate)
-            return
+            return False
 
         if (self.ctrlstate == CtrlState.off):
             logging.debug('the controller is in %s state, please switch off it before', self.ctrlstate)
-            return
+            return False
         
         #get current SOC
         self.getCurrentSOC(True)
@@ -244,11 +244,14 @@ class BatteryControl(object):
         if (self.ctrlstate == CtrlState.charging and self.currentSOC >= self.targetSOC):
             logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
+            return True
         elif (self.ctrlstate == CtrlState.discharging and self.currentSOC <= self.targetSOC):
             logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
+            return True
         else:
             logging.info('target SOC %s not reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
+        return False
 
     def storeExceptions(self, operation, e):
         if (not(operation in self.operationExceptions)):

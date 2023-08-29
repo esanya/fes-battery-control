@@ -99,7 +99,7 @@ class BatteryManager(object):
         loopThread = threading.Thread(target=self.mngrLoop)
         loopThread.start()
 
-#        self.mqttClient = None
+        self.mqttClient = None
         if (self.mqttServer != None):
             self.mqttClient = mqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
             if (self.mqttUser != None):
@@ -170,22 +170,22 @@ class BatteryManager(object):
                 logging.debug('no match.')
                 
 
-        self.batt1.doManagement()
-        self.batt2.doManagement()
+        stateChangeBatt1 = self.batt1.doManagement()
+        stateChangeBatt2 = self.batt2.doManagement()
 
         self.printCurrentStateToLcd()
-        self.publishMqttState(immediateNotification)
+        self.publishMqttState(immediateNotification or stateChangeBatt1 or stateChangeBatt2)
 
     def publishMqttState(self, immediateNotification):
         if (self.mqttServer != None and self.mqttClient != None):
             if (self.stateIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1, retain=True)
                 self.stateIteration=self.initStateIteration
             else:
                 self.stateIteration=self.stateIteration-1
 
             if (self.telemetricIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
+                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1, retain=True)
                 self.telemetricIteration=self.initTelemetricIteration
             else:
                 self.telemetricIteration=self.telemetricIteration-1
