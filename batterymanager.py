@@ -179,13 +179,13 @@ class BatteryManager(object):
     def publishMqttState(self, immediateNotification):
         if (self.mqttServer != None and self.mqttClient != None):
             if (self.stateIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1)
+                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1, retain=True)
                 self.stateIteration=self.initStateIteration
             else:
                 self.stateIteration=self.stateIteration-1
 
             if (self.telemetricIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1)
+                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1, retain=True)
                 self.telemetricIteration=self.initTelemetricIteration
             else:
                 self.telemetricIteration=self.telemetricIteration-1
