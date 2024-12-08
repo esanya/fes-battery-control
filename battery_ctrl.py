@@ -43,15 +43,25 @@ parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
         help='to mock the battery USB-HW device',default=False)
 parser.add_argument('-mqs', '--mqttServer',metavar="mqttServer",
-        help='Mqtt server Address',default=None)
+        help='Cloud Mqtt server Address',default=None)
 parser.add_argument('-mqp', '--mqttPort',metavar="mqttPort",
-        help='Mqtt server Port',type=int,default=1883)
+        help='Cloud Mqtt server Port',type=int,default=1883)
 parser.add_argument('-mqu', '--mqttUser',metavar="mqttUser",
-        help='Mqtt server User',default=None)
+        help='Cloud Mqtt server User',default=None)
 parser.add_argument('-mqw', '--mqttPassword',metavar="mqttPassword",
-        help='Mqtt server Password',default=None)
+        help='Cloud Mqtt server Password',default=None)
 parser.add_argument('-mqtr', '--mqttTopicRoot',metavar="mqttTopicRoot",
-        help='Mqtt Topic Root',default="acbs/fes")
+        help='Cloud Mqtt Topic Root',default="acbs/fes")
+parser.add_argument('-lmqs', '--localMqttServer',metavar="localMqttServer",
+        help='Local Mqtt server Address',default=None)
+parser.add_argument('-lmqp', '--localMqttPort',metavar="localMqttPort",
+        help='Local Mqtt server Port',type=int,default=1883)
+parser.add_argument('-lmqu', '--localMqttUser',metavar="localMqttUser",
+        help='Local Mqtt server User',default=None)
+parser.add_argument('-lmqw', '--localMqttPassword',metavar="localMqttPassword",
+        help='Local Mqtt server Password',default=None)
+parser.add_argument('-lmqtr', '--localMqttTopicRoot',metavar="localMqttTopicRoot",
+        help='Local Mqtt Topic Root',default="local/acbs/fes")
 parser.add_argument('-loglevel', '--loglevel',metavar="loglevel",
         help='LogLevel: DEBUG, ERROR, FATAL, INFO, WARNING',default=logging.INFO)
 

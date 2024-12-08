@@ -17,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, initStateIteration=6, initTelemetricIteration=12, loglevel=logging.DEBUG):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, localMqttServer=None, localMqttPort=1883, localMqttUser=None, localMqttPassword=None, initStateIteration=6, initTelemetricIteration=12, loglevel=logging.DEBUG):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
@@ -45,6 +45,12 @@ class BatteryManager(object):
         self.mqttTopicRoot=mqttTopicRoot
         self.mqttUser=mqttUser
         self.mqttPassword=mqttPassword
+
+        self.localMqttServer=localMqttServer
+        self.localMqttPort=localMqttPort
+        self.localMqttTopicRoot=localMqttTopicRoot
+        self.localMqttUser=localMqttUser
+        self.localMqttPassword=localMqttPassword
 
         self.initStateIteration=initStateIteration
         self.initTelemetricIteration=initTelemetricIteration
@@ -81,23 +87,14 @@ class BatteryManager(object):
     def startUp(self):
         if (self.mocktelemetrix):
             self.board = Mock()
+            self.lcd = Mock()
         else:
             self.board = telemetrix.Telemetrix(arduino_instance_id=self.arduino_instance_id, com_port=self.telemetrixPort, sleep_tune=1e-04)
+            self.lcd = LCD_I2C(self.board)
 
-        self.lcd = LCD_I2C(self.board)
         self.lcd.begin()
         self.lcd.clear()
         self.lcd.backlight()
-
-        self.batt1 = BatteryControl('batt1', self.board, 4, 6, 3, self.btt1CtrlCable, self.btt1CableSpeed, self.mockBattery);
-        self.batt2 = BatteryControl('batt2', self.board, 7, 8, 5, self.btt2CtrlCable, self.btt2CableSpeed, self.mockBattery);
-        self.printCurrentStateToLcd()
-
-        self.mngrLoopEnabled=True
-        self.initCtrlFifo()
-
-        loopThread = threading.Thread(target=self.mngrLoop)
-        loopThread.start()
 
         self.mqttClient = None
         if (self.mqttServer != None):
@@ -106,12 +103,36 @@ class BatteryManager(object):
                 self.mqttClient.username_pw_set(self.mqttUser, self.mqttPassword)
             self.mqttClient.on_connect = self.on_mqtt_connect
             self.mqttClient.on_message = self.on_mqtt_message
-#            self.mqttClient.on_log= self.on_mqtt_log
+            self.mqttClient.on_log= self.on_mqtt_log
     
             if (self.mqttPort == 8883):
                 self.mqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
             self.mqttClient.connect(self.mqttServer, self.mqttPort)
             self.mqttClient.loop_start()
+            
+        self.localMqttClient = None
+        if (self.localMqttServer != None):
+            self.localMqttClient = localMqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
+            if (self.localMqttUser != None):
+                self.localMqttClient.username_pw_set(self.localMqttUser, self.localMqttPassword)
+            self.localMqttClient.on_connect = self.on_localMqtt_connect
+            self.localMqttClient.on_message = self.on_localMqtt_message
+            self.localMqttClient.on_log= self.on_mqtt_log
+    
+            if (self.localMqttPort == 8883):
+                self.localMqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
+            self.localMqttClient.connect(self.localMqttServer, self.localMqttPort)
+            self.localMqttClient.loop_start()
+
+        self.batt1 = BatteryControl('batt1', self.board, 4, 6, 3, self.localMqttClient, self.localMqttTopicRoot, self.btt1CtrlCable, self.btt1CableSpeed, self.mockBattery);
+        self.batt2 = BatteryControl('batt2', self.board, 7, 8, 5, self.localMqttClient, self.localMqttTopicRoot, self.btt2CtrlCable, self.btt2CableSpeed, self.mockBattery);
+        self.printCurrentStateToLcd()
+
+        self.mngrLoopEnabled=True
+        self.initCtrlFifo()
+
+        loopThread = threading.Thread(target=self.mngrLoop)
+        loopThread.start()
 
     def getState(self):
         state={'batt1': self.batt1.getState(), 'batt2': self.batt2.getState()}
@@ -146,6 +167,9 @@ class BatteryManager(object):
 
         if (self.mqttServer != None and self.mqttClient != None):
             self.mqttClient.disconnect()
+
+        if (self.localMqttServer != None and self.localMqttClient != None):
+            self.localMqttClient.disconnect()
 
     #start in separate thread
     def mngrLoop(self):
@@ -238,11 +262,11 @@ class BatteryManager(object):
         logging.debug("Connected with userdata "+str(userdata))
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(self.mqttTopicRoot+"/command", qos=1)
+        #client.subscribe(self.mqttTopicRoot+"/command", qos=1)
     
     # The callback for when a PUBLISH message is received from the server.
     def on_mqtt_message(self, client, userdata, msg):
-        logging.debug('on_message: %s, %s', msg.topic, msg.payload)
+        logging.debug('on_message: %s, %s, %s', client, msg.topic, msg.payload)
         pl=json.loads(msg.payload)
         self.mngrInnerLoop(pl['command'], True)
     
