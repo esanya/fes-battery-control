@@ -78,14 +78,14 @@ class BatteryControl(object):
         self.board.set_pin_mode_digital_output(self.disChargerPin)
         self.board.set_pin_mode_servo(self.mainSwitchServoPin)
         if (self.localMqttClient != None):
-            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+name, "OFF", qos=1, retain=True)
+            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "OFF", qos=1, retain=True)
 
     def initBoard(self):
         self.board.digital_write(self.chargerPin, 1)
         self.board.digital_write(self.disChargerPin, 1)
         self.board.servo_write(self.mainSwitchServoPin, 0)
         if (self.localMqttClient != None):
-            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+name, "OFF", qos=1, retain=True)
+            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "OFF", qos=1, retain=True)
 
         self.ctrlstate=CtrlState.off
         self.btrystate=BtryMainSwitchState.off
@@ -200,7 +200,7 @@ class BatteryControl(object):
             self.board.digital_write(self.chargerPin, 1)
             self.board.digital_write(self.disChargerPin, 1)
             if (self.localMqttClient != None):
-                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+name, "OFF", qos=1, retain=True)
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "OFF", qos=1, retain=True)
             self.ctrlstate = CtrlState.off
             logging.info('controller switched off')
         else:
@@ -219,7 +219,7 @@ class BatteryControl(object):
         if (self.ctrlstate == CtrlState.off):
             self.board.digital_write(self.chargerPin, 0)
             if (self.localMqttClient != None):
-                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+name, "ON", qos=1, retain=True)
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "ON", qos=1, retain=True)
             self.ctrlstate = CtrlState.charging
             logging.info('charging')
         else:
@@ -234,7 +234,7 @@ class BatteryControl(object):
         if (self.ctrlstate == CtrlState.off):
             self.board.digital_write(self.disChargerPin, 0)
             if (self.localMqttClient != None):
-                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+name, "ON", qos=1, retain=True)
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "ON", qos=1, retain=True)
             self.ctrlstate = CtrlState.discharging
             logging.info('discharging')
         else:
