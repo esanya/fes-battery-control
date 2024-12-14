@@ -17,7 +17,7 @@ import subprocess
 report_log='/bttrymngr_report.log'
 
 class BatteryManager(object):
-    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mqttTopicRoot, arduino_instance_id=1, mocktelemetrix=False, mockBattery=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', mqttServer=None, mqttPort=1883, mqttUser=None, mqttPassword=None, localMqttServer=None, localMqttPort=1883, localMqttUser=None, localMqttPassword=None, initStateIteration=6, initTelemetricIteration=12, loglevel=logging.DEBUG):
+    def __init__(self, telemetrixPort, btt1CtrlCable, btt1CableSpeed, btt2CtrlCable, btt2CableSpeed, mockBattery, arduino_instance_id=1, mocktelemetrix=False, control_fifo='/tmp/bttrymngr_ctrl.fifo', cloudMqttServer=None, cloudMqttPort=1883, cloudMqttTopicRoot=None, cloudMqttUser=None, cloudMqttPassword=None, localMqttServer=None, localMqttPort=1883, localMqttTopicRoot=None, localMqttUser=None, localMqttPassword=None, initStateIteration=6, initTelemetricIteration=12, loglevel=logging.DEBUG):
         if (telemetrixPort != 'auto'):
             self.telemetrixPort=telemetrixPort
         else:
@@ -40,11 +40,11 @@ class BatteryManager(object):
             self.btt2CtrlCable=self.findBttCtrlCable(1)
         self.btt2CableSpeed=btt2CableSpeed
 
-        self.mqttServer=mqttServer
-        self.mqttPort=mqttPort
-        self.mqttTopicRoot=mqttTopicRoot
-        self.mqttUser=mqttUser
-        self.mqttPassword=mqttPassword
+        self.cloudMqttServer=cloudMqttServer
+        self.cloudMqttPort=cloudMqttPort
+        self.cloudMqttTopicRoot=cloudMqttTopicRoot
+        self.cloudMqttUser=cloudMqttUser
+        self.cloudMqttPassword=cloudMqttPassword
 
         self.localMqttServer=localMqttServer
         self.localMqttPort=localMqttPort
@@ -96,27 +96,27 @@ class BatteryManager(object):
         self.lcd.clear()
         self.lcd.backlight()
 
-        self.mqttClient = None
-        if (self.mqttServer != None):
-            self.mqttClient = mqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
-            if (self.mqttUser != None):
-                self.mqttClient.username_pw_set(self.mqttUser, self.mqttPassword)
-            self.mqttClient.on_connect = self.on_mqtt_connect
-            self.mqttClient.on_message = self.on_mqtt_message
-            self.mqttClient.on_log= self.on_mqtt_log
+        self.cloudMqttClient = None
+        if (self.cloudMqttServer != None):
+            self.cloudMqttClient = mqttClient.Client(client_id="cloud", userdata=None, protocol=mqttClient.MQTTv5)
+            if (self.cloudMqttUser != None):
+                self.cloudMqttClient.username_pw_set(self.cloudMqttUser, self.cloudMqttPassword)
+            self.cloudMqttClient.on_connect = self.on_mqtt_connect
+            self.cloudMqttClient.on_message = self.on_mqtt_message
+            self.cloudMqttClient.on_log= self.on_mqtt_log
     
-            if (self.mqttPort == 8883):
-                self.mqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
-            self.mqttClient.connect(self.mqttServer, self.mqttPort)
-            self.mqttClient.loop_start()
+            if (self.cloudMqttPort == 8883):
+                self.cloudMqttClient.tls_set(tls_version=mqttClient.ssl.PROTOCOL_TLS)
+            self.cloudMqttClient.connect(self.cloudMqttServer, self.cloudMqttPort)
+            self.cloudMqttClient.loop_start()
             
         self.localMqttClient = None
         if (self.localMqttServer != None):
-            self.localMqttClient = localMqttClient.Client(client_id="", userdata=None, protocol=mqttClient.MQTTv5)
+            self.localMqttClient = mqttClient.Client(client_id="local", userdata=None, protocol=mqttClient.MQTTv5)
             if (self.localMqttUser != None):
                 self.localMqttClient.username_pw_set(self.localMqttUser, self.localMqttPassword)
-            self.localMqttClient.on_connect = self.on_localMqtt_connect
-            self.localMqttClient.on_message = self.on_localMqtt_message
+            self.localMqttClient.on_connect = self.on_mqtt_connect
+            self.localMqttClient.on_message = self.on_mqtt_message
             self.localMqttClient.on_log= self.on_mqtt_log
     
             if (self.localMqttPort == 8883):
@@ -165,8 +165,8 @@ class BatteryManager(object):
         #shutdown telemetrix
         self.board.shutdown()
 
-        if (self.mqttServer != None and self.mqttClient != None):
-            self.mqttClient.disconnect()
+        if (self.cloudMqttServer != None and self.cloudMqttClient != None):
+            self.cloudMqttClient.disconnect()
 
         if (self.localMqttServer != None and self.localMqttClient != None):
             self.localMqttClient.disconnect()
@@ -201,15 +201,15 @@ class BatteryManager(object):
         self.publishMqttState(immediateNotification or stateChangeBatt1 or stateChangeBatt2)
 
     def publishMqttState(self, immediateNotification):
-        if (self.mqttServer != None and self.mqttClient != None):
+        if (self.cloudMqttServer != None and self.cloudMqttClient != None):
             if (self.stateIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/state", json.dumps(self.getState()), qos=1, retain=True)
+                self.cloudMqttClient.publish(self.cloudMqttTopicRoot+"/state", json.dumps(self.getState()), qos=1, retain=True)
                 self.stateIteration=self.initStateIteration
             else:
                 self.stateIteration=self.stateIteration-1
 
             if (self.telemetricIteration<0 or immediateNotification):
-                self.mqttClient.publish(self.mqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1, retain=True)
+                self.cloudMqttClient.publish(self.cloudMqttTopicRoot+"/telemetric", json.dumps(self.getTelemetric()), qos=1, retain=True)
                 self.telemetricIteration=self.initTelemetricIteration
             else:
                 self.telemetricIteration=self.telemetricIteration-1
