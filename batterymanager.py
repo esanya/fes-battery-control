@@ -257,21 +257,17 @@ class BatteryManager(object):
     
     # The callback for when the client receives a CONNACK response from the server.
     def on_mqtt_connect(self, client, userdata, flags, rc, properties=None):
-        logging.debug("Connected with result code "+str(rc))
-        logging.debug("Connected with client "+str(client))
-        logging.debug("Connected with userdata "+str(userdata))
+        logging.debug("Connected with client %s, resultCode: %s, userData: %s", str(client._client_id), str(rc), str(userdata))
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
         #client.subscribe(self.mqttTopicRoot+"/command", qos=1)
     
     # The callback for when a PUBLISH message is received from the server.
     def on_mqtt_message(self, client, userdata, msg):
-        logging.debug('on_message: %s, %s, %s', client, msg.topic, msg.payload)
+        logging.debug('on_message: %s, %s, %s', client._client_id, msg.topic, msg.payload)
         pl=json.loads(msg.payload)
         self.mngrInnerLoop(pl['command'], True)
     
     def on_mqtt_log(self, client, userdata, level, msg):
-        logging.debug("log with client "+str(client))
-        logging.debug("log with userdata "+str(userdata))
-        logging.debug('on_log: %s', msg)
+        logging.debug("log with client %s, data: %s, msg: %s", str(client._client_id), str(userdata), msg)
     
