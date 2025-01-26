@@ -116,7 +116,7 @@ class BatteryManager(object):
             if (self.localMqttUser != None):
                 self.localMqttClient.username_pw_set(self.localMqttUser, self.localMqttPassword)
             self.localMqttClient.on_connect = self.on_mqtt_connect
-            self.localMqttClient.on_message = self.on_mqtt_message
+#            self.localMqttClient.on_message = self.on_mqtt_message
             self.localMqttClient.on_log= self.on_mqtt_log
     
             if (self.localMqttPort == 8883):

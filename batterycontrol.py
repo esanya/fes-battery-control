@@ -242,11 +242,11 @@ class BatteryControl(object):
 
     def doManagement(self):
         if (self.btrystate != BtryMainSwitchState.on):
-            logging.debug('%s the battery is in %s state, please switch on it before', self.name, self.btrystate)
+            #            logging.debug('%s the battery is in %s state, please switch on it before', self.name, self.btrystate)
             return False
 
         if (self.ctrlstate == CtrlState.off):
-            logging.debug('%s the controller is in %s state, please switch off it before', self.name, self.ctrlstate)
+            #            logging.debug('%s the controller is in %s state, please switch off it before', self.name, self.ctrlstate)
             return False
         
         #get current SOC
