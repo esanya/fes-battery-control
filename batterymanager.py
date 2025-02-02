@@ -101,7 +101,7 @@ class BatteryManager(object):
             self.cloudMqttClient = mqttClient.Client(client_id="cloud", userdata=None, protocol=mqttClient.MQTTv5)
             if (self.cloudMqttUser != None):
                 self.cloudMqttClient.username_pw_set(self.cloudMqttUser, self.cloudMqttPassword)
-            self.cloudMqttClient.on_connect = self.on_mqtt_connect
+            self.cloudMqttClient.on_connect = self.on_mqtt_cloud_connect
             self.cloudMqttClient.on_message = self.on_mqtt_message
             self.cloudMqttClient.on_log= self.on_mqtt_log
     
@@ -116,7 +116,7 @@ class BatteryManager(object):
             if (self.localMqttUser != None):
                 self.localMqttClient.username_pw_set(self.localMqttUser, self.localMqttPassword)
             self.localMqttClient.on_connect = self.on_mqtt_connect
-#            self.localMqttClient.on_message = self.on_mqtt_message
+            self.localMqttClient.on_message = self.on_mqtt_message
             self.localMqttClient.on_log= self.on_mqtt_log
     
             if (self.localMqttPort == 8883):
@@ -262,6 +262,13 @@ class BatteryManager(object):
         # reconnect then subscriptions will be renewed.
         #client.subscribe(self.mqttTopicRoot+"/command", qos=1)
     
+    # The callback for when the client receives a CONNACK response from the server.
+    def on_mqtt_cloud_connect(self, client, userdata, flags, rc, properties=None):
+        logging.debug("Connected with client %s, resultCode: %s, userData: %s", str(client._client_id), str(rc), str(userdata))
+        # Subscribing in on_connect() means that if we lose the connection and
+        # reconnect then subscriptions will be renewed.
+        client.subscribe(self.cloudMqttTopicRoot+"/command", qos=1)
+
     # The callback for when a PUBLISH message is received from the server.
     def on_mqtt_message(self, client, userdata, msg):
         logging.debug('on_message: %s, %s, %s', client._client_id, msg.topic, msg.payload)
