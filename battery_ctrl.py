@@ -39,9 +39,9 @@ parser.add_argument('-bs2', '--batteryspeed2',metavar="batteryspeed2",
 parser.add_argument('-ar', '--arduino',metavar="arduino",
         help='the serial device',default="/dev/ttyUSB2")
 parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
-        help='to mock the telemetrix HW device',default=True)
+        help='to mock the telemetrix HW device',default="True")
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
-        help='to mock the battery USB-HW device',default=True)
+        help='to mock the battery USB-HW device',default="True")
 parser.add_argument('-mqs', '--cloudMqttServer',metavar="cloudMqttServer",
         help='Cloud Mqtt server Address',default=None)
 parser.add_argument('-mqp', '--cloudMqttPort',metavar="cloudMqttPort",
@@ -70,7 +70,7 @@ args = parser.parse_args()
 bm = BatteryManager(args.arduino,
         args.battery1,args.batteryspeed1,
         args.battery2,args.batteryspeed2,
-        mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
+        mocktelemetrix=(args.mocktelemetrix=='True'),mockBattery=(args.mockbatteryusb=='True'),
         cloudMqttServer=args.cloudMqttServer, cloudMqttPort=args.cloudMqttPort, cloudMqttUser=args.cloudMqttUser, 
         cloudMqttPassword=args.cloudMqttPassword, cloudMqttTopicRoot=args.cloudMqttTopicRoot, 
         localMqttServer=args.localMqttServer, localMqttPort=args.localMqttPort, localMqttUser=args.localMqttUser, 
