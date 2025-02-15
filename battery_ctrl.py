@@ -41,7 +41,7 @@ parser.add_argument('-ar', '--arduino',metavar="arduino",
 parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
         help='to mock the telemetrix HW device',default="True")
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
-        help='to mock the battery USB-HW device',default="True")
+        help='to mock the battery USB-HW device',default="False")
 parser.add_argument('-mqs', '--cloudMqttServer',metavar="cloudMqttServer",
         help='Cloud Mqtt server Address',default=None)
 parser.add_argument('-mqp', '--cloudMqttPort',metavar="cloudMqttPort",
