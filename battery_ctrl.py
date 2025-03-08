@@ -39,19 +39,29 @@ parser.add_argument('-bs2', '--batteryspeed2',metavar="batteryspeed2",
 parser.add_argument('-ar', '--arduino',metavar="arduino",
         help='the serial device',default="/dev/ttyUSB2")
 parser.add_argument('-mt', '--mocktelemetrix',metavar="mocktelemetrix",
-        help='to mock the telemetrix HW device',default=False)
+        help='to mock the telemetrix HW device',default="True")
 parser.add_argument('-mb', '--mockbatteryusb',metavar="mockbatteryusb",
-        help='to mock the battery USB-HW device',default=False)
-parser.add_argument('-mqs', '--mqttServer',metavar="mqttServer",
-        help='Mqtt server Address',default=None)
-parser.add_argument('-mqp', '--mqttPort',metavar="mqttPort",
-        help='Mqtt server Port',type=int,default=1883)
-parser.add_argument('-mqu', '--mqttUser',metavar="mqttUser",
-        help='Mqtt server User',default=None)
-parser.add_argument('-mqw', '--mqttPassword',metavar="mqttPassword",
-        help='Mqtt server Password',default=None)
-parser.add_argument('-mqtr', '--mqttTopicRoot',metavar="mqttTopicRoot",
-        help='Mqtt Topic Root',default="acbs/fes")
+        help='to mock the battery USB-HW device',default="False")
+parser.add_argument('-mqs', '--cloudMqttServer',metavar="cloudMqttServer",
+        help='Cloud Mqtt server Address',default=None)
+parser.add_argument('-mqp', '--cloudMqttPort',metavar="cloudMqttPort",
+        help='Cloud Mqtt server Port',type=int,default=1883)
+parser.add_argument('-mqu', '--cloudMqttUser',metavar="cloudMqttUser",
+        help='Cloud Mqtt server User',default=None)
+parser.add_argument('-mqw', '--cloudMqttPassword',metavar="cloudMqttPassword",
+        help='Cloud Mqtt server Password',default=None)
+parser.add_argument('-mqtr', '--cloudMqttTopicRoot',metavar="cloudMqttTopicRoot",
+        help='Cloud Mqtt Topic Root',default="acbs/fes")
+parser.add_argument('-lmqs', '--localMqttServer',metavar="localMqttServer",
+        help='Local Mqtt server Address',default=None)
+parser.add_argument('-lmqp', '--localMqttPort',metavar="localMqttPort",
+        help='Local Mqtt server Port',type=int,default=1883)
+parser.add_argument('-lmqu', '--localMqttUser',metavar="localMqttUser",
+        help='Local Mqtt server User',default=None)
+parser.add_argument('-lmqw', '--localMqttPassword',metavar="localMqttPassword",
+        help='Local Mqtt server Password',default=None)
+parser.add_argument('-lmqtr', '--localMqttTopicRoot',metavar="localMqttTopicRoot",
+        help='Local Mqtt Topic Root',default="local/acbs/fes")
 parser.add_argument('-loglevel', '--loglevel',metavar="loglevel",
         help='LogLevel: DEBUG, ERROR, FATAL, INFO, WARNING',default=logging.INFO)
 
@@ -60,9 +70,12 @@ args = parser.parse_args()
 bm = BatteryManager(args.arduino,
         args.battery1,args.batteryspeed1,
         args.battery2,args.batteryspeed2,
-        mocktelemetrix=args.mocktelemetrix,mockBattery=args.mockbatteryusb,
-        mqttServer=args.mqttServer, mqttPort=args.mqttPort, mqttUser=args.mqttUser, 
-        mqttPassword=args.mqttPassword, mqttTopicRoot=args.mqttTopicRoot, loglevel=args.loglevel)
+        mocktelemetrix=(args.mocktelemetrix=='True'),mockBattery=(args.mockbatteryusb=='True'),
+        cloudMqttServer=args.cloudMqttServer, cloudMqttPort=args.cloudMqttPort, cloudMqttUser=args.cloudMqttUser, 
+        cloudMqttPassword=args.cloudMqttPassword, cloudMqttTopicRoot=args.cloudMqttTopicRoot, 
+        localMqttServer=args.localMqttServer, localMqttPort=args.localMqttPort, localMqttUser=args.localMqttUser, 
+        localMqttPassword=args.localMqttPassword, localMqttTopicRoot=args.localMqttTopicRoot, 
+        loglevel=args.loglevel)
 
 try:
     bm.startUp()

@@ -12,7 +12,7 @@ BtryMainSwitchState = Enum('BtryMainSwitchState', 'off on conn_failed')
 #discharging    
 
 class BatteryControl(object):
-    def __init__(self, name, board, chargerPin, disChargerPin, mainSwitchServoPin, usbCtrlCable, usbCableSpeed, mockBattery=False):
+    def __init__(self, name, board, chargerPin, disChargerPin, mainSwitchServoPin, localMqttClient, localMqttTopicRoot, usbCtrlCable, usbCableSpeed, mockBattery=False):
         self.name=name
         self.batteryId=None
         self.chargerPin=chargerPin
@@ -30,9 +30,10 @@ class BatteryControl(object):
         self.mockBattery=mockBattery
         self.usbCtrlCable=usbCtrlCable
         self.usbCableSpeed=usbCableSpeed
-#        sel
 
         self.board=board
+        self.localMqttClient=localMqttClient
+        self.localMqttTopicRoot=localMqttTopicRoot
         self.battery=None
         self.initPin()
         self.initBoard()
@@ -76,11 +77,15 @@ class BatteryControl(object):
         self.board.set_pin_mode_digital_output(self.chargerPin)
         self.board.set_pin_mode_digital_output(self.disChargerPin)
         self.board.set_pin_mode_servo(self.mainSwitchServoPin)
+        if (self.localMqttClient != None):
+            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "OFF", qos=1, retain=True)
 
     def initBoard(self):
         self.board.digital_write(self.chargerPin, 1)
         self.board.digital_write(self.disChargerPin, 1)
         self.board.servo_write(self.mainSwitchServoPin, 0)
+        if (self.localMqttClient != None):
+            self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "OFF", qos=1, retain=True)
 
         self.ctrlstate=CtrlState.off
         self.btrystate=BtryMainSwitchState.off
@@ -126,12 +131,12 @@ class BatteryControl(object):
                 self.valueReadFailCount[method.__name__]=0
             except IndexError as e:
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
-                logging.warn('could not read %s, keeping the previous state %s, failCount %s', 
+                logging.warn('%s could not read %s, keeping the previous state %s, failCount %s', self.name,
                         method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
                 self.storeExceptions(method.__name__, e)
             except Exception as e:
                 self.valueReadFailCount[method.__name__]=self.valueReadFailCount[method.__name__]+1
-                logging.warn('could not read %s, keeping the previous state %s, failCount %s', 
+                logging.warn('%s could not read %s, keeping the previous state %s, failCount %s', self.name,
                         method.__name__, self.currentValue.get(method.__name__), self.valueReadFailCount.get(method.__name__))
                 self.storeExceptions(method.__name__, e)
         elif (refresh and self.mockBattery == True):
@@ -145,11 +150,11 @@ class BatteryControl(object):
                 self.currentSOC=round(self.battery.soc(), 2)
                 self.socFailCount=0
             except IndexError as e:
-                logging.info('could not read soc, keeping the previous state %s, failCount %s', self.currentSOC, self.socFailCount)
+                logging.info('%s could not read soc, keeping the previous state %s, failCount %s', self.name, self.currentSOC, self.socFailCount)
                 self.socFailCount=self.socFailCount+1
                 self.storeExceptions('soc', e)
             except Exception as e:
-                logging.info('could not read soc, keeping the previous state %s, failCount %s', self.currentSOC, self.socFailCount)
+                logging.info('%s could not read soc, keeping the previous state %s, failCount %s', self.name, self.currentSOC, self.socFailCount)
                 self.socFailCount=self.socFailCount+1
                 self.storeExceptions('soc', e)
         elif (refresh and self.mockBattery == True):
@@ -161,7 +166,7 @@ class BatteryControl(object):
         if (self.btrystate != BtryMainSwitchState.on):
             self.board.servo_write(self.mainSwitchServoPin, 90)
             if (self.mockBattery == False):
-                logging.info('opening battery %s with speed %s', self.usbCtrlCable, self.usbCableSpeed)
+                logging.info('%s opening battery %s with speed %s', self.name, self.usbCtrlCable, self.usbCableSpeed)
                 try:
                     self.battery=FES(self.usbCtrlCable, self.usbCableSpeed)
                     self.battery.open()
@@ -174,30 +179,32 @@ class BatteryControl(object):
                     self.btrystate=BtryMainSwitchState.on
                 except Exception as e:
                     self.btrystate=BtryMainSwitchState.conn_failed
-                    logging.error('battery switch on failed: '+str(e))
+                    logging.error('%s battery switch on failed: %s', self.name, str(e))
                     self.storeExceptions('connect', e)
             else:
                 self.btrystate=BtryMainSwitchState.on
-            logging.info('battery switched on')
+            logging.info('%s battery switched on', self.name)
         else:
-            logging.warn('the battery is in %s state, can not switch on again', self.btrystate)
+            logging.warn('%s the battery is in %s state, can not switch on again', self.name, self.btrystate)
 
     def switchBatteryOff(self):
         if (self.btrystate == BtryMainSwitchState.on):
             self.btrystate=BtryMainSwitchState.off
             self.board.servo_write(self.mainSwitchServoPin, 0)
-            logging.info('battery switched off')
+            logging.info('%s battery switched off', self.name)
         else:
-            logging.warn('the battery is in %s state, can not switch off again', self.btrystate)
+            logging.warn('%s the battery is in %s state, can not switch off again', self.name, self.btrystate)
 
     def switchOffChargeDisCharge(self):
         if (self.ctrlstate != CtrlState.off):
             self.board.digital_write(self.chargerPin, 1)
             self.board.digital_write(self.disChargerPin, 1)
+            if (self.localMqttClient != None):
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name+'/cmnd/POWER', "OFF", qos=1, retain=True)
             self.ctrlstate = CtrlState.off
-            logging.info('controller switched off')
+            logging.info('%s controller switched off', self.name)
         else:
-            logging.warn('the controller is in %s state, please switch on it before', self.ctrlstate)
+            logging.warn('%s the controller is in %s state, please switch on it before', self.name, self.ctrlstate)
 
     def shutdown(self):
         self.switchOffChargeDisCharge()
@@ -206,51 +213,55 @@ class BatteryControl(object):
     def charge(self):
         self.switchBatteryOn()
         if (self.btrystate != BtryMainSwitchState.on):
-            logging.warn('the battery is in %s state, please switch on it before', self.btrystate)
+            logging.warn('%s the battery is in %s state, please switch on it before', self.name, self.btrystate)
             return
 
         if (self.ctrlstate == CtrlState.off):
             self.board.digital_write(self.chargerPin, 0)
+            if (self.localMqttClient != None):
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name+'/cmnd/POWER', "ON", qos=1, retain=True)
             self.ctrlstate = CtrlState.charging
-            logging.info('charging')
+            logging.info('%s charging', self.name)
         else:
-            logging.warn('the controller is in %s state, please switch off it before', self.ctrlstate)
+            logging.warn('%s the controller is in %s state, please switch off it before', self.name, self.ctrlstate)
 
     def disCharge(self):
         self.switchBatteryOn()
         if (self.btrystate != BtryMainSwitchState.on):
-            logging.warn('the battery is in %s state, please switch on it before', self.btrystate)
+            logging.warn('%s the battery is in %s state, please switch on it before', self.name, self.btrystate)
             return
 
         if (self.ctrlstate == CtrlState.off):
             self.board.digital_write(self.disChargerPin, 0)
+            if (self.localMqttClient != None):
+                self.localMqttClient.publish(self.localMqttTopicRoot+"/switches/"+self.name, "ON", qos=1, retain=True)
             self.ctrlstate = CtrlState.discharging
-            logging.info('discharging')
+            logging.info('%s discharging', self.name)
         else:
-            logging.warn('the controller is in %s state, please switch off it before', self.ctrlstate)
+            logging.warn('%s the controller is in %s state, please switch off it before', self.name, self.ctrlstate)
 
     def doManagement(self):
         if (self.btrystate != BtryMainSwitchState.on):
-            logging.debug('the battery is in %s state, please switch on it before', self.btrystate)
+            #            logging.debug('%s the battery is in %s state, please switch on it before', self.name, self.btrystate)
             return False
 
         if (self.ctrlstate == CtrlState.off):
-            logging.debug('the controller is in %s state, please switch off it before', self.ctrlstate)
+            #            logging.debug('%s the controller is in %s state, please switch off it before', self.name, self.ctrlstate)
             return False
         
         #get current SOC
         self.getCurrentSOC(True)
 
         if (self.ctrlstate == CtrlState.charging and self.currentSOC >= self.targetSOC):
-            logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
+            logging.info('%s target SOC %s reached, curr: %s during %s', self.name, self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
             return True
         elif (self.ctrlstate == CtrlState.discharging and self.currentSOC <= self.targetSOC):
-            logging.info('target SOC %s reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
+            logging.info('%s target SOC %s reached, curr: %s during %s', self.name, self.targetSOC, self.currentSOC, self.ctrlstate)
             self.switchOffChargeDisCharge()
             return True
         else:
-            logging.info('target SOC %s not reached %s during %s', self.targetSOC, self.currentSOC, self.ctrlstate)
+            logging.info('%s target SOC %s not reached, curr: %s during %s', self.name, self.targetSOC, self.currentSOC, self.ctrlstate)
         return False
 
     def storeExceptions(self, operation, e):

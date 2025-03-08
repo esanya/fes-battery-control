@@ -1,5 +1,5 @@
 {
-  "dataVersion": 120,
+  "dataVersion": 152,
   "globalSettings": {
     "runInBackground": true,
     "appTheme": "dark"
@@ -11,8 +11,8 @@
       "host": "cd6c2d7b02534583b3ad61b8c3540032.s2.eu.hivemq.cloud",
       "port": 8883,
       "connectionType": "ssl",
-      "username": "fes_read_user",
-      "password": "abc",
+      "username": "fes_b1",
+      "password": "",
       "connectionTimeout": 30,
       "keepAlive": 60,
       "autoConnect": false,
@@ -28,7 +28,11 @@
       "willQoS": 0,
       "defaultDashboard": "dashboard_1",
       "connectionId": "connection_1",
-      "notifyOnDisconnect": false
+      "notifyOnDisconnect": false,
+      "cleanSession": true,
+      "allowUntrustCACertificate": false,
+      "tlsVersion": "TLSv1.2",
+      "encryptionPassword": ""
     },
     {
       "connectionName": "acbsfestest",
@@ -36,8 +40,8 @@
       "host": "cd6c2d7b02534583b3ad61b8c3540032.s2.eu.hivemq.cloud",
       "port": 8883,
       "connectionType": "ssl",
-      "username": "x",
-      "password": "y",
+      "username": "fes_system_test_user",
+      "password": "",
       "connectionTimeout": 30,
       "keepAlive": 60,
       "autoConnect": false,
@@ -53,29 +57,11 @@
       "willQoS": 0,
       "defaultDashboard": "dashboard_4",
       "connectionId": "connection_2",
-      "notifyOnDisconnect": false
+      "notifyOnDisconnect": false,
+      "cleanSession": true
     }
   ],
   "dashboards": [
-    {
-      "connectionId": "connection_1",
-      "dashboardId": "dashboard_1",
-      "dashboardName": "fes",
-      "dashboardPrefixTopic": "",
-      "lockPanels": false
-    },
-    {
-      "connectionId": "connection_1",
-      "dashboardId": "dashboard_2",
-      "dashboardName": "hutte",
-      "dashboardPrefixTopic": ""
-    },
-    {
-      "connectionId": "connection_1",
-      "dashboardId": "dashboard_3",
-      "dashboardName": "ladekuh",
-      "dashboardPrefixTopic": ""
-    },
     {
       "connectionId": "connection_2",
       "dashboardId": "dashboard_4",
@@ -92,6 +78,25 @@
     {
       "connectionId": "connection_2",
       "dashboardId": "dashboard_6",
+      "dashboardName": "ladekuh",
+      "dashboardPrefixTopic": ""
+    },
+    {
+      "connectionId": "connection_1",
+      "dashboardId": "dashboard_1",
+      "dashboardName": "fes",
+      "dashboardPrefixTopic": "",
+      "lockPanels": true
+    },
+    {
+      "connectionId": "connection_1",
+      "dashboardId": "dashboard_2",
+      "dashboardName": "hutte",
+      "dashboardPrefixTopic": ""
+    },
+    {
+      "connectionId": "connection_1",
+      "dashboardId": "dashboard_3",
       "dashboardName": "ladekuh",
       "dashboardPrefixTopic": ""
     }
@@ -614,7 +619,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": true,
       "noPayload": false,
@@ -642,7 +647,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": false,
       "noPayload": false,
@@ -670,7 +675,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": true,
       "noPayload": false,
@@ -698,7 +703,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": true,
       "noPayload": false,
@@ -881,6 +886,12 @@
           "label": "On",
           "icon": "radio_button_checked",
           "iconColor": "#2fd259"
+        },
+        {
+          "payload": "BtryMainSwitchState.conn_failed",
+          "label": "Connection Failed",
+          "icon": "radio_button_checked",
+          "iconColor": "#be1c1c"
         }
       ],
       "disableDashboardPrefix": false,
@@ -920,6 +931,12 @@
           "label": "On",
           "icon": "radio_button_checked",
           "iconColor": "#2fd259"
+        },
+        {
+          "payload": "BtryMainSwitchState.conn_failed",
+          "label": "Connection Failed",
+          "icon": "radio_button_checked",
+          "iconColor": "#be1c1c"
         }
       ],
       "disableDashboardPrefix": false,
@@ -1390,7 +1407,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": true,
       "noPayload": false,
@@ -1418,7 +1435,7 @@
       "jsonEnvelope": "",
       "panelWidth": "50",
       "panelMergeClass": "",
-      "fitToPanelWidth": false,
+      "fitToPanelWidth": true,
       "buttonSize": "medium",
       "showSentTimeStamp": true,
       "noPayload": false,
@@ -1754,6 +1771,38 @@
       "jsonPath": "$.batt2.tbal",
       "messageFactor": 1,
       "step": 1
+    },
+    {
+      "connectionId": "connection_2",
+      "dashboardId": "dashboard_4",
+      "panelId": "panel_52",
+      "panelName": "Errorlog",
+      "type": "log",
+      "mqttType": "sub",
+      "topic": "acbs/state",
+      "qos": 0,
+      "logLength": 10,
+      "maxPersistence": 100,
+      "disableDashboardPrefix": false,
+      "panelWidth": "100",
+      "showLatestMsgOnly": false,
+      "fontSize": 20,
+      "hideLabel": false,
+      "hideTopic": false,
+      "unit": "",
+      "panelMergeClass": "",
+      "showReceivedTimeStamp": false,
+      "enableNotification": false,
+      "notificationFilter": "all",
+      "notificationMin": "",
+      "notificationMax": "",
+      "notificationValue": "",
+      "notificationRegex": "",
+      "notificationMessage": "<payload>",
+      "isJSONPayload": true,
+      "jsonPath": "$.batt1.",
+      "digitalDisplay": false,
+      "messageFactor": 1
     }
   ]
 }
