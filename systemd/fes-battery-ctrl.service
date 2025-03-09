@@ -1,16 +1,18 @@
 [Unit]
 Description=FES Battery Control Service
-After=multi-user.target
+After=network.target
+StartLimitIntervalSec=0
 #Requires=
 
 [Service]
-User=username
+Type=simple
+Restart=always
+RestartSec=60
+
 WorkingDirectory=/home/username/fes-battery-control
 ExecStart=./bin/python3 ./battery_ctrl.py -ar auto -bu1 auto -bs1 56000 -bu2 auto -bs2 56000 -mqs cd6c2d7b02534583b3ad61b8c3540032.s2.eu.hivemq.cloud -mqp 8883 -mqu fes_c1 -mqw <passwd> -mqtr acbs/fes
 #ExecStart=./bin/python3 ./battery_ctrl.py -ar auto -bu1 auto -bs1 56000 -bu2 auto -bs2 56000 -mqs cd6c2d7b02534583b3ad61b8c3540032.s2.eu.hivemq.cloud -mqp 8883 -mqu fes_c1 -mqw <passwd> -mqtr acbs/fes
 ExecStop=kill -15 $MAINPID
-Restart=on-failure
-RestartSec=60
 
 [Install]
 WantedBy=multi-user.target
