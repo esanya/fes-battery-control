@@ -49,6 +49,14 @@ Controll the SW
 - ```echo "bat=all discharge" > /tmp/bttrymngr_ctrl.fifo```
 - ```echo "bat=all shutdown" > /tmp/bttrymngr_ctrl.fifo```
 
+## SystemD setup
+
+Copy the systemd config file to /etc/systemd/system/, call:
+
+- ```systemd daemon-reload```
+- ```systemd enable fes-battery-ctrl```
+- ```systemd start fes-battery-ctrl```
+- ```systemd status fes-battery-ctrl```
 
 
 
