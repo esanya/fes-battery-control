@@ -19,6 +19,7 @@ import time
 import os
 import logging
 from fes_common import FESMessages,FESResponses
+import struct
 
 
 VER = sys.version_info
@@ -141,7 +142,7 @@ class FES(object):
         time.sleep(0.1)
         resp=self.ser.read_all()
         fragmentCount = 10
-        logging.debug("%s from %s %s", debugMessage, self.ser, resp)
+        logging.debug("%s: from: %s resp: %s", debugMessage, self.ser, resp)
         while (len(resp) < lenpos and fragmentCount>=0):
             time.sleep(0.2)
             newresp=self.ser.read_all()
@@ -215,15 +216,12 @@ class FES(object):
 
         try:
             compl=self.decodeMessage(resp, 1)
-            value=0
-            if ((compl[23]&0x01) > 0):
-                value=50+(50*compl[22])/127
-            else:
-                value=(50*compl[21])/127
-
-
+            #https://flop.evanau.dev/brainfloat-converter
+            #soc is a bfloat, the procent can be calculated by multiplying by 100
+            raw_soc=compl[22:24]
+            value = self.bfloat16_to_float(raw_soc, 'little') * 100
         
-            logging.info("%s: %s", debugMessage, value)
+            logging.info("%s: raw: %s, decoded: %s", debugMessage, list(raw_soc), value)
 
             return value
 
@@ -240,6 +238,18 @@ class FES(object):
         
     def tbal(self):
         return self.requestFor(self.messages.MESSAGES['TBAL'], "cell response read")
+
+    def bfloat16_to_float(self, b: bytes, byteorder: str = 'little') -> float:
+        """Convert 2-byte bfloat16 bytes to a Python float.
+        b: bytes-like of length 2
+        byteorder: 'little' or 'big' (endianness of the input bytes)
+        """
+        if len(b) != 2:
+            raise ValueError("Input must be exactly 2 bytes")
+        hb = int.from_bytes(b, byteorder)      # 16-bit unsigned value
+        f32_bits = hb << 16                    # place bfloat16 at top 16 bits of float32
+        # pack as unsigned 32-bit BE and unpack as float32
+        return struct.unpack('!f', struct.pack('!I', f32_bits))[0]
 
 
 
