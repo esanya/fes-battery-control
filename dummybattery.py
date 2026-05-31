@@ -37,6 +37,7 @@ parser.add_argument('-cmx', '--cmaxinit',metavar="cmaxinit",help='the initial va
 parser.add_argument('-mnh', '--minhinit',metavar="minhinit",help='the initial value of MINH',type=float,default=None)
 parser.add_argument('-mxh', '--maxhinit',metavar="maxhinit",help='the initial value of MAXH',type=float,default=None)
 parser.add_argument('-lc', '--lcd1init',metavar="lcd1init",help='the initial value of LCD1',default=None)
+parser.add_argument('-lb', '--lcdbytes',metavar="lcdbytes",help='the initial bytes of LCD1',default=None)
 parser.add_argument('-lo', '--lcd1cont',metavar="lcd1cont",help='the continue change value of LCD1 at this index',default=None)
 parser.add_argument('-li', '--lcd1incr',metavar="lcd1incr",help='the continue change value of LCD1 with this value',type=int,default=2)
 parser.add_argument('-cl', '--cellinit',metavar="cellinit",help='the initial value of CELL',type=float,default=None)
@@ -67,6 +68,8 @@ responses=FESResponses()
 def sendSimpleLcd():
     if (args.lcd1init!= None):
         sock.sendall(args.lcd1init.encode('utf-8'))
+    elif (args.lcdbytes!= None):
+        sock.sendall(args.lcdbytes.encode('utf-8'))
     else:
         if (args.fragment):
             len=int(len(responses.RESPONSES['LCD1'])/2)
